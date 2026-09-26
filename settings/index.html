@@ -83,6 +83,16 @@ function onHomeyReady(H) {
   load();
 }
 
+// Fallback: if homey.js fails to inject (seen on some older Homey app versions),
+// window.Homey is already set — call ready() and load directly.
+setTimeout(function() {
+  if (!Homey && window.Homey) { onHomeyReady(window.Homey); }
+  else if (!Homey) {
+    document.getElementById('hub-list').innerHTML =
+      '<div class="empty">Could not connect to Homey — try closing and reopening this page.</div>';
+  }
+}, 3000);
+
 async function load() {
   try {
     var [hubsRaw, token] = await Promise.all([

@@ -1,4 +1,7 @@
 {
+  "0.2.91": {
+    "en": "Fix settings page spinning forever on some Homey app versions"
+  },
   "0.2.90": {
     "en": "Fix proxy mDNS announcing hub as X1 instead of X2, restoring full device-add options in the SofaBaton app"
   },
