@@ -1,4 +1,7 @@
 {
+  "0.2.92": {
+    "en": "Fix activity-changed Flow trigger not firing over TCP connection"
+  },
   "0.2.91": {
     "en": "Fix settings page spinning forever on some Homey app versions"
   },

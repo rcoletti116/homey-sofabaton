@@ -412,7 +412,31 @@ class SofaBatonClient {
       return;
     }
     if (f.opcode === OP.ACK_READY) {
-      setTimeout(() => this.refreshActivities().catch(e => this.homey.error(e.message)), 250);
+      // Payload byte 0 = newly-active activity ID (0 = no activity / off).
+      // Fire onActivityChange immediately if the activity is already in the catalog,
+      // otherwise refresh first then fire.
+      const newId = f.payload.length > 0 ? f.payload[0] : null;
+      this.homey.log(`ACK_READY: payload=${f.payload.toString('hex')} newId=${newId}`);
+      if (newId != null && newId !== 0) {
+        const act = this.activities.get(newId);
+        if (act) {
+          this.currentActivityId   = newId;
+          this.currentActivityName = act.name;
+          this.onActivityChange(newId, act.name);
+        } else {
+          // Activity not yet catalogued — refresh then fire
+          this.refreshActivities().then(() => {
+            const a = this.activities.get(newId);
+            this.currentActivityId   = newId;
+            this.currentActivityName = a?.name || `Activity ${newId}`;
+            this.onActivityChange(newId, this.currentActivityName);
+          }).catch(e => this.homey.error(e.message));
+        }
+      } else {
+        // newId 0 or missing — activity stopped; still refresh catalog for housekeeping
+        if (newId === 0) this.onActivityChange(0, '');
+        setTimeout(() => this.refreshActivities().catch(e => this.homey.error(e.message)), 250);
+      }
       return;
     }
     if (f.opcode === 0xD53B) { this.parseActivityRow(f.payload); return; }
