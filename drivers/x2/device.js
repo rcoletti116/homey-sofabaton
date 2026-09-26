@@ -1006,10 +1006,13 @@ class SofaBatonClient {
   }
 
   _startMdnsAnnounce(hostIp) {
-    // Use same instance name format as the real hub (X1-HUB-<last3MACbytes>)
-    // so our cache-flush A record overwrites the hub's cached IP with the proxy IP.
+    // Match the hub's own mDNS instance name so our cache-flush A record
+    // overwrites the hub's cached IP with the proxy IP, and the SofaBaton app
+    // still sees the correct model (X2 vs X1S).
+    // 0x1502 banner = X2 firmware → "X2-HUB-…"; 0x1D02 = X1S → "X1-HUB-…"
     const mac = this.bannerMac || '000000';
-    const instanceName = `X1-HUB-${mac.slice(-6).toLowerCase()}`;
+    const prefix = this._bannerOpcode === 0x1502 ? 'X2-HUB' : 'X1-HUB';
+    const instanceName = `${prefix}-${mac.slice(-6).toLowerCase()}`;
     const port = this._proxyUdpPort;
 
     // Keep one socket open for the lifetime of the interval — avoids creating
