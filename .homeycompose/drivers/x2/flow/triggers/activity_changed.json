@@ -1,0 +1,10 @@
+{
+  "title": {
+    "en": "The active activity changed"
+  },
+  "tokens": [
+    { "name": "activity_name",       "type": "string", "title": { "en": "Activity" } },
+    { "name": "activity_id",          "type": "number", "title": { "en": "Activity ID" } },
+    { "name": "previous_activity_id", "type": "number", "title": { "en": "Previous Activity ID" } }
+  ]
+}

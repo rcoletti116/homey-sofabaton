@@ -1,0 +1,53 @@
+{
+  "id": "com.sofabaton.homey",
+  "sdk": 3,
+  "version": "0.2.89",
+  "compatibility": ">=12.0.0",
+  "name": {
+    "en": "SofaBaton"
+  },
+  "description": {
+    "en": "Local, cloud-free control of SofaBaton X2 hubs. Bind remote buttons to Homey devices, trigger Flows on button presses, track activities, and coexist with the SofaBaton mobile app — all over LAN."
+  },
+  "tags": {
+    "en": ["remote", "universal remote", "local", "lan", "automation"]
+  },
+  "category": "tools",
+  "brandColor": "#111111",
+  "platforms": [
+    "local"
+  ],
+  "author": {
+    "name": "Robert Coletti",
+    "email": "bt2ygq77ks@privaterelay.appleid.com",
+    "website": "https://github.com/rcoletti116"
+  },
+  "images": {
+    "small": "./assets/images/small.png",
+    "large": "./assets/images/large.png",
+    "xlarge": "./assets/images/xlarge.png"
+  },
+  "contributing": {
+    "donate": {}
+  },
+  "bugs": {
+    "url": "https://github.com/rcoletti116/homey-sofabaton/issues"
+  },
+  "source": "https://github.com/rcoletti116/homey-sofabaton",
+  "homepage": "https://github.com/rcoletti116/homey-sofabaton",
+  "hasSettings": true,
+  "api": {
+    "getDevices": {
+      "method": "GET",
+      "path": "/devices"
+    },
+    "getWifiDevices": {
+      "method": "GET",
+      "path": "/wifi-devices"
+    },
+    "createWifiDevice": {
+      "method": "POST",
+      "path": "/wifi-devices"
+    }
+  }
+}

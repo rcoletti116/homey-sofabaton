@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SofaBaton Settings</title>
+<script src="/homey.js" data-origin="settings"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, sans-serif; font-size: 14px; color: #222; background: #f5f5f5; }
+  .section { background: #fff; border-radius: 8px; margin: 12px; padding: 14px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  h2 { font-size: 13px; font-weight: 600; text-transform: uppercase; color: #888; margin-bottom: 10px; letter-spacing: .5px; }
+  .hub { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
+  .hub:last-child { border-bottom: none; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .dot.on { background: #4caf50; }
+  .dot.off { background: #ccc; }
+  .hub-name { font-weight: 500; }
+  .hub-sub { font-size: 12px; color: #888; }
+  .manage-link { display: inline-block; margin-top: 6px; color: #1a73e8; text-decoration: none; font-size: 13px; font-weight: 500; }
+  .manage-link:hover { text-decoration: underline; }
+  .manage-btn { display: inline-block; margin-top: 10px; padding: 9px 16px; background: #1b5e20; color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none; }
+  .manage-btn:hover { background: #2e7d32; }
+  label { display: block; font-size: 12px; color: #666; margin-bottom: 4px; margin-top: 12px; }
+  label:first-of-type { margin-top: 0; }
+  input[type=text], input[type=password], select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+  .hint { font-size: 11px; color: #999; margin-top: 4px; }
+  .tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .tag { background: #e8f0fe; color: #1a73e8; border-radius: 14px; padding: 3px 10px; font-size: 12px; display: flex; align-items: center; gap: 4px; }
+  .tag button { background: none; border: none; color: #1a73e8; cursor: pointer; font-size: 14px; line-height: 1; padding: 0; }
+  #cmd-input-row { display: flex; gap: 6px; margin-top: 6px; }
+  #cmd-input { flex: 1; }
+  #add-cmd { padding: 8px 14px; background: #1a73e8; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; }
+  #create-btn { margin-top: 14px; width: 100%; padding: 10px; background: #1a73e8; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; }
+  #create-btn:disabled { opacity: .5; cursor: default; }
+  #save-token-btn { margin-top: 8px; padding: 8px 16px; background: #1a73e8; color: #fff; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; }
+  #save-token-btn:disabled { opacity: .5; cursor: default; }
+  #token-msg, #status-msg { margin-top: 8px; font-size: 12px; color: #555; min-height: 16px; }
+  .empty { color: #aaa; font-size: 13px; padding: 8px 0; }
+</style>
+</head>
+<body>
+
+  <div class="section">
+    <h2>Hubs</h2>
+    <div id="hub-list"><div class="empty">Loading…</div></div>
+  </div>
+
+  <div class="section">
+    <h2>Homey Local API Token</h2>
+    <label>Token (used for Button Controls device picker)</label>
+    <input type="password" id="token-inp" placeholder="Paste your Homey local API token">
+    <div class="hint">Get from Homey Settings → Developer → Local API → New Token</div>
+    <button id="save-token-btn" disabled>Save token</button>
+    <div id="token-msg"></div>
+  </div>
+
+  <div class="section">
+    <h2>Create WiFi Device</h2>
+    <label>Hub</label>
+    <select id="hub-select"><option value="">— Select hub —</option></select>
+
+    <label>Device name</label>
+    <input type="text" id="dev-name" placeholder="e.g. Living Room Lights">
+
+    <label>Commands (add one at a time)</label>
+    <div id="cmd-input-row">
+      <input type="text" id="cmd-input" placeholder="e.g. On">
+      <button id="add-cmd">Add</button>
+    </div>
+    <div class="tag-row" id="cmd-tags"></div>
+
+    <button id="create-btn" disabled>Create device on hub</button>
+    <div id="status-msg"></div>
+  </div>
+
+<script>
+var Homey;
+var commands = [];
+
+function onHomeyReady(H) {
+  Homey = H;
+  Homey.ready();
+  load();
+}
+
+async function load() {
+  try {
+    var [hubsRaw, token] = await Promise.all([
+      Homey.get('hubs_cache'),
+      Homey.get('homey_local_token'),
+    ]);
+
+    var hubs = [];
+    try { if (hubsRaw) hubs = JSON.parse(hubsRaw); } catch (_) {}
+    renderHubs(hubs);
+
+    if (token) document.getElementById('token-inp').value = token;
+  } catch (err) {
+    document.getElementById('hub-list').innerHTML = '<div class="empty">Error: ' + esc(err.message) + '</div>';
+  }
+}
+
+function renderHubs(hubs) {
+  var list = document.getElementById('hub-list');
+  var sel  = document.getElementById('hub-select');
+  sel.innerHTML = '<option value="">— Select hub —</option>';
+
+  if (!hubs.length) {
+    list.innerHTML = '<div class="empty">No hubs found — check hub IP in device settings</div>';
+    return;
+  }
+
+  list.innerHTML = hubs.map(function(h) {
+    var wf = (h.wifiDevices || []).length;
+    return '<div class="hub">' +
+      '<div class="dot ' + (h.connected ? 'on' : 'off') + '"></div>' +
+      '<div><div class="hub-name">' + esc(h.name) + '</div>' +
+      '<div class="hub-sub">' + esc(h.id) + ' &bull; ' + wf + ' WiFi device' + (wf !== 1 ? 's' : '') + (h.connected ? '' : ' — offline') + '</div>' +
+      (h.manageUrl ? '<a class="manage-btn" href="' + esc(h.manageUrl) + '" target="_blank">Manage Device Control</a>' : '') +
+      '</div></div>';
+  }).join('');
+
+  hubs.forEach(function(h) {
+    var opt = document.createElement('option');
+    opt.value = h.id;
+    opt.textContent = h.name + ' (' + h.id + ')';
+    if (!h.connected) { opt.textContent += ' — offline'; opt.disabled = true; }
+    sel.appendChild(opt);
+  });
+
+  checkCreate();
+}
+
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, function(c) {
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
+}
+
+document.getElementById('token-inp').addEventListener('input', function() {
+  document.getElementById('save-token-btn').disabled = !this.value.trim();
+});
+
+document.getElementById('save-token-btn').addEventListener('click', async function() {
+  var btn = this;
+  var msg = document.getElementById('token-msg');
+  var tok = document.getElementById('token-inp').value.trim();
+  btn.disabled = true;
+  try {
+    await Homey.set('homey_local_token', tok);
+    msg.textContent = 'Saved!';
+    setTimeout(function() { msg.textContent = ''; }, 3000);
+  } catch (err) {
+    msg.textContent = 'Error: ' + err.message;
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+document.getElementById('add-cmd').addEventListener('click', function() {
+  var inp = document.getElementById('cmd-input');
+  var val = inp.value.trim();
+  if (!val || commands.includes(val) || commands.length >= 10) return;
+  commands.push(val);
+  inp.value = '';
+  renderTags();
+  checkCreate();
+});
+
+document.getElementById('cmd-input').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') document.getElementById('add-cmd').click();
+});
+
+function renderTags() {
+  document.getElementById('cmd-tags').innerHTML = commands.map(function(c, i) {
+    return '<span class="tag">' + esc(c) +
+      '<button onclick="removeCmd(' + i + ')" title="Remove">&times;</button></span>';
+  }).join('');
+}
+
+function removeCmd(i) {
+  commands.splice(i, 1);
+  renderTags();
+  checkCreate();
+}
+
+function checkCreate() {
+  var ok = document.getElementById('hub-select').value &&
+           document.getElementById('dev-name').value.trim() &&
+           commands.length > 0;
+  document.getElementById('create-btn').disabled = !ok;
+}
+
+document.getElementById('hub-select').addEventListener('change', checkCreate);
+document.getElementById('dev-name').addEventListener('input', checkCreate);
+
+document.getElementById('create-btn').addEventListener('click', async function() {
+  var btn = this;
+  var msg = document.getElementById('status-msg');
+  btn.disabled = true;
+  msg.textContent = 'Creating…';
+
+  var req = {
+    deviceId: document.getElementById('hub-select').value,
+    name:     document.getElementById('dev-name').value.trim(),
+    commands: commands.slice(),
+  };
+
+  try {
+    await Homey.set('wifi_create', JSON.stringify(req));
+
+    var attempts = 0;
+    var poll = setInterval(async function() {
+      try {
+        var val = await Homey.get('wifi_status');
+        if (!val) { if (++attempts > 15) { clearInterval(poll); msg.textContent = 'Timed out'; btn.disabled = false; } return; }
+        clearInterval(poll);
+        var res;
+        try { res = JSON.parse(val); } catch (_) { res = { ok: false, error: 'Bad response' }; }
+        if (res.ok) {
+          msg.textContent = 'Created! Device ID: ' + (res.result && res.result.deviceId);
+          document.getElementById('dev-name').value = '';
+          commands = [];
+          renderTags();
+          await Homey.set('wifi_status', '');
+          load();
+        } else {
+          msg.textContent = 'Failed: ' + res.error;
+          btn.disabled = false;
+          await Homey.set('wifi_status', '');
+        }
+      } catch (_) {}
+    }, 1000);
+  } catch (err) {
+    msg.textContent = 'Error: ' + err.message;
+    btn.disabled = false;
+  }
+});
+</script>
+</body>
+</html>

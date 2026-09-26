@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SofaBaton WiFi Devices</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    padding: 16px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 14px;
+    background: var(--homey-background-color, #fff);
+    color: var(--homey-text-color, #111);
+  }
+
+  h2 {
+    margin: 0 0 12px;
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .section { margin-bottom: 24px; }
+
+  /* Existing device cards */
+  .device-card {
+    background: var(--homey-card-background-color, #f5f5f5);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+  }
+  .device-card-name { font-weight: 600; margin-bottom: 2px; }
+  .device-card-meta { font-size: 12px; color: var(--homey-text-color-light, #888); }
+
+  .empty { color: var(--homey-text-color-light, #888); font-style: italic; }
+
+  hr { border: none; border-top: 1px solid var(--homey-border-color, #e0e0e0); margin: 24px 0; }
+
+  /* Form */
+  .form-group { margin-bottom: 14px; }
+  .form-label { display: block; font-weight: 500; margin-bottom: 5px; }
+
+  input[type="text"] {
+    width: 100%;
+    padding: 9px 11px;
+    border: 1px solid var(--homey-border-color, #ddd);
+    border-radius: 8px;
+    font-size: 14px;
+    background: var(--homey-background-color, #fff);
+    color: var(--homey-text-color, #111);
+    outline: none;
+  }
+  input[type="text"]:focus {
+    border-color: var(--homey-accent-color, #4c9be8);
+  }
+
+  /* Command rows */
+  .cmd-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .cmd-row input { flex: 1; }
+  .btn-remove {
+    flex-shrink: 0;
+    background: none;
+    border: 1px solid var(--homey-border-color, #ddd);
+    border-radius: 8px;
+    padding: 8px 10px;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--homey-text-color-light, #888);
+    line-height: 1;
+  }
+  .btn-remove:hover { background: #fee; border-color: #f99; color: #c00; }
+
+  .btn-add-cmd {
+    width: 100%;
+    padding: 9px;
+    background: none;
+    border: 1px dashed var(--homey-border-color, #ccc);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--homey-text-color-light, #888);
+    margin-top: 2px;
+  }
+  .btn-add-cmd:hover { background: var(--homey-card-background-color, #f5f5f5); }
+
+  /* Create button */
+  .btn-create {
+    width: 100%;
+    padding: 11px;
+    background: var(--homey-accent-color, #4c9be8);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 4px;
+    transition: opacity 0.15s;
+  }
+  .btn-create:disabled { opacity: 0.5; cursor: default; }
+  .btn-create:not(:disabled):hover { opacity: 0.9; }
+
+  /* Status banner */
+  .banner {
+    border-radius: 8px;
+    padding: 10px 13px;
+    margin-top: 12px;
+    display: none;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+  .banner.ok  { display: block; background: #e8f5e9; color: #2e7d32; }
+  .banner.err { display: block; background: #ffebee; color: #c62828; }
+
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="section">
+  <h2>WiFi devices on X2</h2>
+  <div id="device-list"><span class="empty">Loading…</span></div>
+</div>
+
+<hr />
+
+<div class="section">
+  <h2>Add new WiFi device</h2>
+
+  <div class="form-group">
+    <label class="form-label" for="device-name">Device name</label>
+    <input type="text" id="device-name" placeholder="e.g. Living Room Lights" maxlength="29" />
+  </div>
+
+  <div class="form-group">
+    <label class="form-label">Commands <span id="cmd-count" style="font-weight:400;color:var(--homey-text-color-light,#888)">(0 / 10)</span></label>
+    <div id="cmd-list"></div>
+    <button class="btn-add-cmd" id="btn-add-cmd" onclick="addCmd()">+ Add command</button>
+  </div>
+
+  <button class="btn-create" id="btn-create" onclick="createDevice()">Create on X2</button>
+  <div class="banner" id="banner"></div>
+</div>
+
+<script>
+  var _Homey = null;
+  var _deviceIp = null;
+
+  function onHomeyReady(Homey) {
+    _Homey = Homey;
+    Homey.ready();
+    addCmd(); // seed one empty row
+
+    // Read the saved X2 IP address — that is also getData().id on the Homey device
+    Homey.get('ip', function(err, ip) {
+      if (err || !ip) {
+        showBanner('Cannot identify device (no IP setting): ' + (err || ''), true);
+        return;
+      }
+      _deviceIp = ip;
+      loadDevices();
+    });
+  }
+
+  /* ── Load existing WiFi devices ── */
+  function loadDevices() {
+    _Homey.api('GET', '/wifi-devices', { deviceId: _deviceIp }, function(err, res) {
+      var el = document.getElementById('device-list');
+      if (err) {
+        el.innerHTML = '<span class="empty" style="color:#c62828">Error: ' + err + '</span>';
+        return;
+      }
+      var list = (res && res.devices) || [];
+      if (list.length === 0) {
+        el.innerHTML = '<span class="empty">No WiFi devices yet. Create one below.</span>';
+      } else {
+        el.innerHTML = list.map(function(d) {
+          return '<div class="device-card">'
+            + '<div class="device-card-name">' + esc(d.name) + '</div>'
+            + '<div class="device-card-meta">Hub ID ' + d.id + '</div>'
+            + '</div>';
+        }).join('');
+      }
+    });
+  }
+
+  /* ── Command rows ── */
+  function addCmd() {
+    var rows = document.querySelectorAll('#cmd-list .cmd-row');
+    if (rows.length >= 10) return;
+
+    var row = document.createElement('div');
+    row.className = 'cmd-row';
+
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = 'Command name (e.g. On)';
+    input.maxLength = 29;
+    input.addEventListener('input', updateCmdCount);
+    row.appendChild(input);
+
+    var btn = document.createElement('button');
+    btn.className = 'btn-remove';
+    btn.textContent = '✕';
+    btn.onclick = function() { row.remove(); updateCmdCount(); };
+    row.appendChild(btn);
+
+    document.getElementById('cmd-list').appendChild(row);
+    updateCmdCount();
+    input.focus();
+  }
+
+  function updateCmdCount() {
+    var n = document.querySelectorAll('#cmd-list .cmd-row').length;
+    document.getElementById('cmd-count').textContent = '(' + n + ' / 10)';
+    document.getElementById('btn-add-cmd').disabled = (n >= 10);
+  }
+
+  /* ── Create device ── */
+  function createDevice() {
+    var name = document.getElementById('device-name').value.trim();
+    var commands = [];
+    document.querySelectorAll('#cmd-list .cmd-row input').forEach(function(inp) {
+      var v = inp.value.trim();
+      if (v) commands.push(v);
+    });
+
+    if (!name) { showBanner('Device name is required.', true); return; }
+    if (commands.length === 0) { showBanner('Add at least one command.', true); return; }
+    if (!_deviceIp) { showBanner('Device IP not available — save the IP setting first.', true); return; }
+
+    var btn = document.getElementById('btn-create');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Creating…';
+    clearBanner();
+
+    _Homey.api('POST', '/wifi-devices', { deviceId: _deviceIp, name: name, commands: commands }, function(err, res) {
+      btn.disabled = false;
+      btn.textContent = 'Create on X2';
+
+      if (err) {
+        showBanner('Failed: ' + err, true);
+        return;
+      }
+
+      showBanner(
+        'Created "' + esc(res.name) + '" (hub ID ' + res.deviceId + ')'
+        + ' with ' + res.commands.length + ' command(s).', false
+      );
+
+      // Reset form
+      document.getElementById('device-name').value = '';
+      document.getElementById('cmd-list').innerHTML = '';
+      addCmd();
+      updateCmdCount();
+      loadDevices();
+    });
+  }
+
+  /* ── Helpers ── */
+  function showBanner(msg, isErr) {
+    var el = document.getElementById('banner');
+    el.textContent = msg;
+    el.className = 'banner ' + (isErr ? 'err' : 'ok');
+  }
+  function clearBanner() {
+    document.getElementById('banner').className = 'banner';
+  }
+  function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+</script>
+</body>
+</html>

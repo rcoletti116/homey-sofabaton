@@ -1,0 +1,22 @@
+{
+  "title": {
+    "en": "Start SofaBaton activity"
+  },
+  "titleFormatted": {
+    "en": "Start activity [[activity]]"
+  },
+  "args": [
+    {
+      "name": "device",
+      "type": "device",
+      "filter": "driver_id=x2"
+    },
+    {
+      "name": "activity",
+      "type": "autocomplete",
+      "title": {
+        "en": "Activity"
+      }
+    }
+  ]
+}

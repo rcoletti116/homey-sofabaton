@@ -1,0 +1,15 @@
+{
+  "title": {
+    "en": "Refresh SofaBaton catalog"
+  },
+  "titleFormatted": {
+    "en": "Refresh SofaBaton device catalog"
+  },
+  "args": [
+    {
+      "name": "device",
+      "type": "device",
+      "filter": "driver_id=x2"
+    }
+  ]
+}

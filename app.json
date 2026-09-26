@@ -1,0 +1,554 @@
+{
+  "_comment": "This file is generated. Please edit .homeycompose/app.json instead.",
+  "id": "com.sofabaton.homey",
+  "sdk": 3,
+  "version": "0.2.89",
+  "compatibility": ">=12.0.0",
+  "name": {
+    "en": "SofaBaton"
+  },
+  "description": {
+    "en": "Local, cloud-free control of SofaBaton X2 hubs. Bind remote buttons to Homey devices, trigger Flows on button presses, track activities, and coexist with the SofaBaton mobile app — all over LAN."
+  },
+  "tags": {
+    "en": [
+      "remote",
+      "universal remote",
+      "local",
+      "lan",
+      "automation"
+    ]
+  },
+  "category": "tools",
+  "brandColor": "#111111",
+  "platforms": [
+    "local"
+  ],
+  "author": {
+    "name": "Robert Coletti",
+    "email": "bt2ygq77ks@privaterelay.appleid.com",
+    "website": "https://github.com/rcoletti116"
+  },
+  "images": {
+    "small": "./assets/images/small.png",
+    "large": "./assets/images/large.png",
+    "xlarge": "./assets/images/xlarge.png"
+  },
+  "contributing": {
+    "donate": {}
+  },
+  "bugs": {
+    "url": "https://github.com/rcoletti116/homey-sofabaton/issues"
+  },
+  "source": "https://github.com/rcoletti116/homey-sofabaton",
+  "homepage": "https://github.com/rcoletti116/homey-sofabaton",
+  "hasSettings": true,
+  "api": {
+    "getDevices": {
+      "method": "GET",
+      "path": "/devices"
+    },
+    "getWifiDevices": {
+      "method": "GET",
+      "path": "/wifi-devices"
+    },
+    "createWifiDevice": {
+      "method": "POST",
+      "path": "/wifi-devices"
+    }
+  },
+  "flow": {
+    "actions": [
+      {
+        "title": {
+          "en": "Create SofaBaton WiFi device"
+        },
+        "titleFormatted": {
+          "en": "Create SofaBaton WiFi device [[device_name]] with commands [[commands]]"
+        },
+        "hint": {
+          "en": "Creates a virtual HTTP device on the X2 hub. Commands fire the 'button pressed' trigger in Homey when activated on the remote. Limit: 5 WiFi devices per hub, 10 commands each."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=x2"
+          },
+          {
+            "name": "device_name",
+            "type": "text",
+            "title": {
+              "en": "Device name (as shown in SofaBaton app)"
+            },
+            "placeholder": {
+              "en": "e.g. Living Room Lights"
+            }
+          },
+          {
+            "name": "commands",
+            "type": "text",
+            "title": {
+              "en": "Commands (comma-separated, max 10)"
+            },
+            "placeholder": {
+              "en": "e.g. On, Off, Dim, Scene 1"
+            }
+          }
+        ],
+        "tokens": [
+          {
+            "name": "hub_device_id",
+            "type": "number",
+            "title": {
+              "en": "Hub device ID"
+            }
+          },
+          {
+            "name": "device_name",
+            "type": "string",
+            "title": {
+              "en": "Device name"
+            }
+          }
+        ],
+        "id": "create_wifi_device"
+      },
+      {
+        "title": {
+          "en": "Find SofaBaton remote"
+        },
+        "titleFormatted": {
+          "en": "Find SofaBaton remote"
+        },
+        "hint": {
+          "en": "Makes the X2 remote beep so you can locate it."
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=x2"
+          }
+        ],
+        "id": "find_remote"
+      },
+      {
+        "title": {
+          "en": "Get SofaBaton callback URL"
+        },
+        "titleFormatted": {
+          "en": "Get SofaBaton callback URL"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=x2"
+          }
+        ],
+        "tokens": [
+          {
+            "name": "callback_url",
+            "type": "string",
+            "title": {
+              "en": "Callback base URL"
+            }
+          },
+          {
+            "name": "callback_port",
+            "type": "number",
+            "title": {
+              "en": "Callback port"
+            }
+          },
+          {
+            "name": "manage_url",
+            "type": "string",
+            "title": {
+              "en": "Management UI URL"
+            }
+          }
+        ],
+        "id": "get_callback_url"
+      },
+      {
+        "title": {
+          "en": "Refresh SofaBaton catalog"
+        },
+        "titleFormatted": {
+          "en": "Refresh SofaBaton device catalog"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=x2"
+          }
+        ],
+        "id": "refresh_catalog"
+      },
+      {
+        "title": {
+          "en": "Send SofaBaton command"
+        },
+        "titleFormatted": {
+          "en": "Send [[command]] to [[entity]]"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=x2"
+          },
+          {
+            "name": "entity",
+            "type": "autocomplete",
+            "title": {
+              "en": "Device / activity"
+            }
+          },
+          {
+            "name": "command",
+            "type": "autocomplete",
+            "title": {
+              "en": "Command"
+            }
+          }
+        ],
+        "id": "send_command"
+      },
+      {
+        "title": {
+          "en": "Start SofaBaton activity"
+        },
+        "titleFormatted": {
+          "en": "Start activity [[activity]]"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=x2"
+          },
+          {
+            "name": "activity",
+            "type": "autocomplete",
+            "title": {
+              "en": "Activity"
+            }
+          }
+        ],
+        "id": "start_activity"
+      },
+      {
+        "title": {
+          "en": "Stop SofaBaton activity"
+        },
+        "titleFormatted": {
+          "en": "Stop the current activity"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=x2"
+          }
+        ],
+        "id": "stop_activity"
+      },
+      {
+        "id": "release_hub",
+        "title": {
+          "en": "Release hub for SofaBaton app"
+        },
+        "titleFormatted": {
+          "en": "Release hub for [[minutes]] minutes"
+        },
+        "hint": {
+          "en": "Disconnects Homey from the hub so the SofaBaton mobile app can connect directly. Homey reconnects automatically after the chosen time."
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=x2"
+          },
+          {
+            "name": "minutes",
+            "type": "number",
+            "title": {
+              "en": "Minutes"
+            },
+            "placeholder": {
+              "en": "10"
+            },
+            "min": 1,
+            "max": 60
+          }
+        ]
+      }
+    ],
+    "triggers": [
+      {
+        "id": "button_pressed",
+        "title": {
+          "en": "A button was pressed"
+        },
+        "titleFormatted": {
+          "en": "[[sofabaton_device]] button [[button]] was pressed"
+        },
+        "hint": {
+          "en": "Fires when a SofaBaton remote button activates a device command. Leave the filter fields blank (select '— Any —') to catch all presses."
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=x2"
+          },
+          {
+            "name": "sofabaton_device",
+            "type": "autocomplete",
+            "title": {
+              "en": "SofaBaton device (filter)"
+            },
+            "placeholder": {
+              "en": "Any device…"
+            }
+          },
+          {
+            "name": "button",
+            "type": "autocomplete",
+            "title": {
+              "en": "Button / command (filter)"
+            },
+            "placeholder": {
+              "en": "Any button…"
+            }
+          }
+        ],
+        "tokens": [
+          {
+            "name": "button",
+            "type": "string",
+            "title": {
+              "en": "Button name"
+            }
+          },
+          {
+            "name": "device_name",
+            "type": "string",
+            "title": {
+              "en": "Device"
+            }
+          },
+          {
+            "name": "device_id",
+            "type": "number",
+            "title": {
+              "en": "Device ID"
+            }
+          },
+          {
+            "name": "key_id",
+            "type": "number",
+            "title": {
+              "en": "Key ID"
+            }
+          },
+          {
+            "name": "activity_id",
+            "type": "number",
+            "title": {
+              "en": "Activity ID"
+            }
+          }
+        ]
+      },
+      {
+        "id": "activity_changed",
+        "title": {
+          "en": "The active activity changed"
+        },
+        "titleFormatted": {
+          "en": "[[activity]] became active"
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=x2"
+          },
+          {
+            "name": "activity",
+            "type": "autocomplete",
+            "title": {
+              "en": "Activity (filter)"
+            },
+            "placeholder": {
+              "en": "Any activity…"
+            }
+          }
+        ],
+        "tokens": [
+          {
+            "name": "activity_name",
+            "type": "string",
+            "title": {
+              "en": "Activity"
+            }
+          },
+          {
+            "name": "activity_id",
+            "type": "number",
+            "title": {
+              "en": "Activity ID"
+            }
+          },
+          {
+            "name": "previous_activity_id",
+            "type": "number",
+            "title": {
+              "en": "Previous Activity ID"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "drivers": [
+    {
+      "name": {
+        "en": "SofaBaton X2"
+      },
+      "images": {
+        "small": "./drivers/x2/assets/images/small.png",
+        "large": "./drivers/x2/assets/images/large.png",
+        "xlarge": "./drivers/x2/assets/images/xlarge.png"
+      },
+      "class": "remote",
+      "platforms": [
+        "local"
+      ],
+      "connectivity": [
+        "lan"
+      ],
+      "capabilities": [
+        "app_mode"
+      ],
+      "pair": [
+        {
+          "id": "manual_ip",
+          "navigation": {
+            "next": "list_devices"
+          }
+        },
+        {
+          "id": "list_devices",
+          "template": "list_devices",
+          "navigation": {
+            "next": "add_devices"
+          },
+          "options": {
+            "singular": true
+          }
+        },
+        {
+          "id": "add_devices",
+          "template": "add_devices"
+        }
+      ],
+      "id": "x2",
+      "settings": [
+        {
+          "id": "ip",
+          "type": "text",
+          "label": {
+            "en": "SofaBaton X2 IP address"
+          },
+          "value": ""
+        },
+        {
+          "id": "release_minutes",
+          "type": "number",
+          "label": {
+            "en": "App mode duration (minutes)"
+          },
+          "hint": {
+            "en": "How long to release the hub when the App Mode toggle is turned on."
+          },
+          "value": 10,
+          "attr": {
+            "min": 1,
+            "max": 60
+          }
+        },
+        {
+          "id": "mqtt_host",
+          "type": "text",
+          "label": {
+            "en": "MQTT broker host (optional)"
+          },
+          "value": ""
+        },
+        {
+          "id": "mqtt_port",
+          "type": "number",
+          "label": {
+            "en": "MQTT broker port"
+          },
+          "value": 1883
+        },
+        {
+          "id": "mqtt_username",
+          "type": "text",
+          "label": {
+            "en": "MQTT username (optional)"
+          },
+          "value": ""
+        },
+        {
+          "id": "mqtt_password",
+          "type": "password",
+          "label": {
+            "en": "MQTT password (optional)"
+          },
+          "value": ""
+        }
+      ]
+    }
+  ],
+  "capabilities": {
+    "app_mode": {
+      "type": "boolean",
+      "title": {
+        "en": "SofaBaton App Mode"
+      },
+      "desc": {
+        "en": "ON = hub released so the SofaBaton mobile app can connect directly (10 min). Turns OFF automatically when Homey reconnects."
+      },
+      "getable": true,
+      "setable": true,
+      "uiComponent": "toggle",
+      "uiQuickAction": true,
+      "insights": false,
+      "icon": "./assets/icon.svg"
+    },
+    "find_remote": {
+      "type": "boolean",
+      "title": {
+        "en": "Find Remote"
+      },
+      "desc": {
+        "en": "Press to make the X2 remote beep so you can locate it."
+      },
+      "getable": false,
+      "setable": true,
+      "uiComponent": "button",
+      "uiQuickAction": false,
+      "insights": false,
+      "icon": "./assets/icon.svg"
+    }
+  }
+}

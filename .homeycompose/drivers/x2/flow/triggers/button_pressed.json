@@ -1,0 +1,12 @@
+{
+  "title": {
+    "en": "A button was pressed"
+  },
+  "tokens": [
+    { "name": "button",      "type": "string", "title": { "en": "Button name" } },
+    { "name": "device_name", "type": "string", "title": { "en": "Device" } },
+    { "name": "device_id",   "type": "number", "title": { "en": "Device ID" } },
+    { "name": "key_id",      "type": "number", "title": { "en": "Key ID" } },
+    { "name": "activity_id", "type": "number", "title": { "en": "Activity ID" } }
+  ]
+}

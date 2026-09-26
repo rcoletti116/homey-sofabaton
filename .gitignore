@@ -1,0 +1,4 @@
+node_modules/
+.homeybuild/
+*.zip
+.DS_Store

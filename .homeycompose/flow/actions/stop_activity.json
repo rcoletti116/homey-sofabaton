@@ -1,0 +1,15 @@
+{
+  "title": {
+    "en": "Stop SofaBaton activity"
+  },
+  "titleFormatted": {
+    "en": "Stop the current activity"
+  },
+  "args": [
+    {
+      "name": "device",
+      "type": "device",
+      "filter": "driver_id=x2"
+    }
+  ]
+}

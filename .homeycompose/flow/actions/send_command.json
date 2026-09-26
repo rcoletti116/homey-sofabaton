@@ -1,0 +1,29 @@
+{
+  "title": {
+    "en": "Send SofaBaton command"
+  },
+  "titleFormatted": {
+    "en": "Send [[command]] to [[entity]]"
+  },
+  "args": [
+    {
+      "name": "device",
+      "type": "device",
+      "filter": "driver_id=x2"
+    },
+    {
+      "name": "entity",
+      "type": "autocomplete",
+      "title": {
+        "en": "Device / activity"
+      }
+    },
+    {
+      "name": "command",
+      "type": "autocomplete",
+      "title": {
+        "en": "Command"
+      }
+    }
+  ]
+}

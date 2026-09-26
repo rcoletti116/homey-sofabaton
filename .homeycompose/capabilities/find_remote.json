@@ -1,0 +1,15 @@
+{
+  "type": "boolean",
+  "title": {
+    "en": "Find Remote"
+  },
+  "desc": {
+    "en": "Press to make the X2 remote beep so you can locate it."
+  },
+  "getable": false,
+  "setable": true,
+  "uiComponent": "button",
+  "uiQuickAction": false,
+  "insights": false,
+  "icon": "./assets/icon.svg"
+}

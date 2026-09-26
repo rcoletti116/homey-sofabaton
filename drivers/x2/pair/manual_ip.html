@@ -1,0 +1,44 @@
+<fieldset>
+  <legend>SofaBaton X2</legend>
+
+  <div class="field-row">
+    <label for="ip">X2 IP address</label>
+    <input id="ip" type="text" placeholder="192.168.1.50" />
+  </div>
+
+  <p>MQTT is optional. Add it later in the device settings if you want physical X2 button presses to trigger Homey Flows.</p>
+</fieldset>
+
+<button id="connect" class="homey-button-primary-full">Connect</button>
+
+<pre id="status" style="white-space:pre-wrap;"></pre>
+
+<script>
+document.getElementById('connect').addEventListener('click', async () => {
+  const status = document.getElementById('status');
+  const ip = document.getElementById('ip').value.trim();
+
+  status.textContent =
+    'Starting connection test for ' + ip + '...';
+
+  try {
+    const result = await Homey.emit('validate_ip', { ip });
+
+    status.textContent =
+      'RESULT:\\n' +
+      JSON.stringify(result, null, 2);
+
+    if (result === true) {
+      await Homey.nextView();
+    }
+  } catch (err) {
+    status.textContent =
+      'ERROR:\\n' +
+      'typeof=' + typeof err + '\\n' +
+      'constructor=' + (err && err.constructor ? err.constructor.name : 'none') + '\\n' +
+      'keys=' + (err ? Object.keys(err).join(',') : 'none') + '\\n' +
+      'message=' + (err && err.message ? err.message : 'none') + '\\n' +
+      'string=' + String(err);
+  }
+});
+</script>

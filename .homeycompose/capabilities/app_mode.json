@@ -1,0 +1,15 @@
+{
+  "type": "boolean",
+  "title": {
+    "en": "SofaBaton App Mode"
+  },
+  "desc": {
+    "en": "ON = hub released so the SofaBaton mobile app can connect directly (10 min). Turns OFF automatically when Homey reconnects."
+  },
+  "getable": true,
+  "setable": true,
+  "uiComponent": "toggle",
+  "uiQuickAction": true,
+  "insights": false,
+  "icon": "./assets/icon.svg"
+}

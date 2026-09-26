@@ -1,0 +1,32 @@
+{
+  "title": {
+    "en": "Get SofaBaton callback URL"
+  },
+  "titleFormatted": {
+    "en": "Get SofaBaton callback URL"
+  },
+  "args": [
+    {
+      "name": "device",
+      "type": "device",
+      "filter": "driver_id=x2"
+    }
+  ],
+  "tokens": [
+    {
+      "name": "callback_url",
+      "type": "string",
+      "title": { "en": "Callback base URL" }
+    },
+    {
+      "name": "callback_port",
+      "type": "number",
+      "title": { "en": "Callback port" }
+    },
+    {
+      "name": "manage_url",
+      "type": "string",
+      "title": { "en": "Management UI URL" }
+    }
+  ]
+}

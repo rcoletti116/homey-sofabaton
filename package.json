@@ -1,0 +1,15 @@
+{
+  "name": "com.sofabaton.homey",
+  "version": "0.2.89",
+  "description": "Local, cloud-free control of SofaBaton X2 hubs for Homey.",
+  "main": "app.js",
+  "scripts": {
+    "build": "homey app build",
+    "validate": "homey app validate",
+    "run": "homey app run"
+  },
+  "devDependencies": {
+    "homey": "^3.0.0"
+  },
+  "dependencies": {}
+}

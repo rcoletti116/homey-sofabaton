@@ -1,0 +1,23 @@
+{
+  "name": {
+    "en": "SofaBaton X2"
+  },
+  "images": {
+    "small": "./drivers/x2/assets/images/small.png",
+    "large": "./drivers/x2/assets/images/large.png",
+    "xlarge": "./drivers/x2/assets/images/xlarge.png"
+  },
+  "class": "remote",
+  "platforms": [
+    "local"
+  ],
+  "connectivity": [
+    "lan"
+  ],
+  "capabilities": ["app_mode"],
+  "pair": [
+    {
+      "id": "manual_ip"
+    }
+  ]
+}

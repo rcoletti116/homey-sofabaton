@@ -1,0 +1,40 @@
+[
+  {
+    "id": "ip",
+    "type": "text",
+    "label": { "en": "SofaBaton X2 IP address" },
+    "value": ""
+  },
+  {
+    "id": "release_minutes",
+    "type": "number",
+    "label": { "en": "App mode duration (minutes)" },
+    "hint": { "en": "How long to release the hub when the App Mode toggle is turned on." },
+    "value": 10,
+    "attr": { "min": 1, "max": 60 }
+  },
+  {
+    "id": "mqtt_host",
+    "type": "text",
+    "label": { "en": "MQTT broker host (optional)" },
+    "value": ""
+  },
+  {
+    "id": "mqtt_port",
+    "type": "number",
+    "label": { "en": "MQTT broker port" },
+    "value": 1883
+  },
+  {
+    "id": "mqtt_username",
+    "type": "text",
+    "label": { "en": "MQTT username (optional)" },
+    "value": ""
+  },
+  {
+    "id": "mqtt_password",
+    "type": "password",
+    "label": { "en": "MQTT password (optional)" },
+    "value": ""
+  }
+]

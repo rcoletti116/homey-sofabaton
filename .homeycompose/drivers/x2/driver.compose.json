@@ -1,0 +1,7 @@
+{
+  "name": {
+    "en": "SofaBaton X2"
+  },
+  "class": "remote",
+  "capabilities": ["app_mode", "find_remote"]
+}

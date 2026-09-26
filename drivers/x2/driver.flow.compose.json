@@ -1,0 +1,77 @@
+{
+  "actions": [
+    {
+      "id": "release_hub",
+      "title": { "en": "Release hub for SofaBaton app" },
+      "titleFormatted": { "en": "Release hub for [[minutes]] minutes" },
+      "hint": { "en": "Disconnects Homey from the hub so the SofaBaton mobile app can connect directly. Homey reconnects automatically after the chosen time." },
+      "args": [
+        {
+          "name": "minutes",
+          "type": "number",
+          "title": { "en": "Minutes" },
+          "placeholder": { "en": "10" },
+          "min": 1,
+          "max": 60
+        }
+      ]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "button_pressed",
+      "title": {
+        "en": "A button was pressed"
+      },
+      "titleFormatted": {
+        "en": "[[sofabaton_device]] button [[button]] was pressed"
+      },
+      "hint": {
+        "en": "Fires when a SofaBaton remote button activates a device command. Leave the filter fields blank (select '— Any —') to catch all presses."
+      },
+      "args": [
+        {
+          "name": "sofabaton_device",
+          "type": "autocomplete",
+          "title": { "en": "SofaBaton device (filter)" },
+          "placeholder": { "en": "Any device…" }
+        },
+        {
+          "name": "button",
+          "type": "autocomplete",
+          "title": { "en": "Button / command (filter)" },
+          "placeholder": { "en": "Any button…" }
+        }
+      ],
+      "tokens": [
+        { "name": "button",      "type": "string", "title": { "en": "Button name" } },
+        { "name": "device_name", "type": "string", "title": { "en": "Device" } },
+        { "name": "device_id",   "type": "number", "title": { "en": "Device ID" } },
+        { "name": "key_id",      "type": "number", "title": { "en": "Key ID" } },
+        { "name": "activity_id", "type": "number", "title": { "en": "Activity ID" } }
+      ]
+    },
+    {
+      "id": "activity_changed",
+      "title": {
+        "en": "The active activity changed"
+      },
+      "titleFormatted": {
+        "en": "[[activity]] became active"
+      },
+      "args": [
+        {
+          "name": "activity",
+          "type": "autocomplete",
+          "title": { "en": "Activity (filter)" },
+          "placeholder": { "en": "Any activity…" }
+        }
+      ],
+      "tokens": [
+        { "name": "activity_name",        "type": "string", "title": { "en": "Activity" } },
+        { "name": "activity_id",           "type": "number", "title": { "en": "Activity ID" } },
+        { "name": "previous_activity_id",  "type": "number", "title": { "en": "Previous Activity ID" } }
+      ]
+    }
+  ]
+}
