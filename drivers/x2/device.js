@@ -413,8 +413,6 @@ class SofaBatonClient {
     }
     if (f.opcode === OP.ACK_READY) {
       this.options.dlog?.(`ACK_READY: payload=${f.payload.toString('hex')}`);
-      this._catchUnknown = true;
-      setTimeout(() => { this._catchUnknown = false; }, 2000);
       setTimeout(() => this.refreshActivities().catch(e => this.homey.error(e.message)), 250);
       return;
     }
@@ -425,9 +423,8 @@ class SofaBatonClient {
         this._accumulateCommandPage(f.payload, f.opcode, this.pendingCommandDeviceId);
       return;
     }
-    if (this._catchUnknown) {
-      this.options.dlog?.(`UNKNOWN_FRAME: opcode=0x${f.opcode.toString(16)} payload=${f.payload.subarray(0,16).toString('hex')}`);
-    }
+    // Log all unrecognised frames so we can identify the activity-change notification
+    this.options.dlog?.(`UNKNOWN: opcode=0x${f.opcode.toString(16)} payload=${f.payload.subarray(0,16).toString('hex')}`);
   }
 
   parseActivityRow(p) {
