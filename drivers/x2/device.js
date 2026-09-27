@@ -535,14 +535,9 @@ class SofaBatonClient {
     await this.mqtt.connect();
     const mac = this.bannerMac;
     const macLower = mac.toLowerCase();
-    // Subscribe both cases — hub MAC format in topic varies by firmware
-    this.mqtt.subscribe(`activity/${mac}/activity_control_down`);
-    this.mqtt.subscribe(`activity/${macLower}/activity_control_down`);
+    this.mqtt.subscribe(`activity/${mac}/activity_control_up`);
     this.mqtt.subscribe(`${mac}/up`);
-    this.mqtt.subscribe(`${macLower}/up`);
-    // Wildcard: catch everything on broker to identify what the hub actually publishes
-    this.mqtt.subscribe('#');
-    this.options.dlog?.(`MQTT connected; mac=${mac} subscribed activity+up (upper+lower) + wildcard`);
+    this.options.dlog?.(`MQTT connected; mac=${mac}`);
   }
 
   handleMqtt(topic, payload) {
@@ -550,7 +545,7 @@ class SofaBatonClient {
     let data;
     try { data = JSON.parse(payload); } catch { data = payload.trim(); }
 
-    if (topic.endsWith('/activity_control_down')) {
+    if (topic.endsWith('/activity_control_up')) {
       const id = Number(data?.activity_id ?? data?.activityId ?? data?.id ?? data?.activity ?? data);
       if (Number.isFinite(id)) {
         const a = this.activities.get(id);
