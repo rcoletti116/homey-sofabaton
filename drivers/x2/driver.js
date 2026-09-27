@@ -67,7 +67,10 @@ module.exports = class SofaBatonDriver extends Homey.Driver {
 
     // ── ACTION: STOP ACTIVITY ────────────────────────────────────────────────
     this.homey.flow.getActionCard('stop_activity').registerRunListener(async (args) => {
-      return args.device.sofaBaton.stopActivity();
+      this.homey.log(`stop_activity: device=${args.device?.id} sofaBaton=${!!args.device?.sofaBaton} currentId=${args.device?.sofaBaton?.currentActivityId}`);
+      const result = await args.device.sofaBaton.stopActivity();
+      this.homey.log(`stop_activity: done result=${result}`);
+      return result;
     });
 
 
