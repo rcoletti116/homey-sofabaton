@@ -540,7 +540,9 @@ class SofaBatonClient {
     this.mqtt.subscribe(`activity/${macLower}/activity_control_down`);
     this.mqtt.subscribe(`${mac}/up`);
     this.mqtt.subscribe(`${macLower}/up`);
-    this.options.dlog?.(`MQTT connected; mac=${mac} subscribed activity+up (upper+lower)`);
+    // Wildcard: catch everything on broker to identify what the hub actually publishes
+    this.mqtt.subscribe('#');
+    this.options.dlog?.(`MQTT connected; mac=${mac} subscribed activity+up (upper+lower) + wildcard`);
   }
 
   handleMqtt(topic, payload) {

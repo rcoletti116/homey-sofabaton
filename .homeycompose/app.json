@@ -1,7 +1,7 @@
 {
   "id": "com.sofabaton.homey",
   "sdk": 3,
-  "version": "0.2.104",
+  "version": "0.2.105",
   "compatibility": ">=12.0.0",
   "name": {
     "en": "SofaBaton"
