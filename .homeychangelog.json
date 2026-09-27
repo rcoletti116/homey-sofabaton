@@ -1,4 +1,7 @@
 {
+  "0.2.93": {
+    "en": "Fix proxy mDNS announcing X1 on first boot by persisting hub model opcode across restarts"
+  },
   "0.2.92": {
     "en": "Fix activity-changed Flow trigger not firing over TCP connection"
   },

@@ -2107,7 +2107,10 @@ class SofaBatonDevice extends Homey.Device {
         if (connected) this.setAvailable();
         else if (!this._hubPausedUntil || Date.now() >= this._hubPausedUntil) this.setUnavailable('SofaBaton disconnected');
       },
-      onBannerMac: mac => { this.setStoreValue('banner_mac', mac).catch(() => {}); },
+      onBannerMac: mac => {
+        this.setStoreValue('banner_mac', mac).catch(() => {});
+        this.setStoreValue('banner_opcode', this.sofaBaton._bannerOpcode || 0).catch(() => {});
+      },
     });
 
     this._hubPausedUntil = 0;
@@ -2142,9 +2145,11 @@ class SofaBatonDevice extends Homey.Device {
 
     // Start mDNS proxy immediately using cached MAC so the SofaBaton app
     // always hits the proxy — even before Homey connects to the hub.
-    const cachedMac = await Promise.resolve(this.getStoreValue('banner_mac')).catch(() => null);
+    const cachedMac    = await Promise.resolve(this.getStoreValue('banner_mac')).catch(() => null);
+    const cachedOpcode = await Promise.resolve(this.getStoreValue('banner_opcode')).catch(() => null);
     if (cachedMac) {
-      this.sofaBaton.bannerMac = cachedMac; // Pre-fill so CALL_ME includes hub MAC from first attempt
+      this.sofaBaton.bannerMac      = cachedMac;
+      this.sofaBaton._bannerOpcode  = cachedOpcode || null;
       this.sofaBaton._startProxyWithMac(cachedMac).catch(e =>
         this.homey.error('Early proxy start error:', e.message));
     }
@@ -2263,7 +2268,10 @@ class SofaBatonDevice extends Homey.Device {
         if (connected) this.setAvailable();
         else if (!this._hubPausedUntil || Date.now() >= this._hubPausedUntil) this.setUnavailable('SofaBaton disconnected');
       },
-      onBannerMac: mac => { this.setStoreValue('banner_mac', mac).catch(() => {}); },
+      onBannerMac: mac => {
+        this.setStoreValue('banner_mac', mac).catch(() => {});
+        this.setStoreValue('banner_opcode', this.sofaBaton._bannerOpcode || 0).catch(() => {});
+      },
     });
     this._connectWithRetry();
   }
