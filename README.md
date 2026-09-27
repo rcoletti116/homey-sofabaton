@@ -1,6 +1,6 @@
 # SofaBaton for Homey
 
-Local, cloud-free integration between the **SofaBaton X2** universal remote hub and **Homey Pro**. Press buttons on any X2-paired remote to control Homey devices directly — no cloud, no MQTT broker required.
+Local, cloud-free integration between the **SofaBaton X2** universal remote hub and **Homey Pro**. Press buttons on any X2-paired remote to control Homey devices directly — no cloud required. An MQTT broker is optional (needed only for activity-change triggers).
 
 ---
 
@@ -24,6 +24,7 @@ Local, cloud-free integration between the **SofaBaton X2** universal remote hub 
 | Homey Pro | 2023 model or later, firmware ≥ 12.0.0 |
 | SofaBaton X2 | Hub on the same LAN subnet as Homey |
 | Homey local API token | Optional — needed only for device-binding and auto-flow features in the Manage page |
+| MQTT broker | Optional — needed only for the `activity changed` Flow trigger (e.g. Mosquitto). All other features work without it. |
 
 > The SofaBaton X1 / X1S are **not** supported. The X2 uses a different local protocol.
 
@@ -97,7 +98,7 @@ The new device appears in SofaBaton's device catalog and can be assigned to butt
 | Card | Description |
 |---|---|
 | `A button was pressed` | Fires when any X2 remote button activates a device command. Tokens: `button`, `device_name`, `device_id`, `key_id`, `activity_id`. Use the filter args to match a specific device or button. |
-| `The active activity changed` | Fires when the X2 switches activities. Tokens: `activity_name`, `activity_id`, `previous_activity_id`. |
+| `The active activity changed` | Fires when the X2 switches activities. Tokens: `activity_name`, `activity_id`, `previous_activity_id`. **Requires an MQTT broker** — the X2 only publishes activity state over MQTT; configure the broker in device settings. |
 
 ### Actions
 
@@ -126,6 +127,7 @@ The SofaBaton mobile app and Homey cannot both hold the hub connection simultane
 
 - **X2 only** — X1 and X1S use a different protocol and are not supported
 - **Single hub** — only one X2 per Homey device is supported currently
+- **Activity triggers require MQTT** — the X2 hub only broadcasts activity state over MQTT; without a broker configured, the `activity changed` trigger will not fire
 - **LAN access required** — the Manage page is not reachable outside your local network (by design)
 - **Unofficial protocol** — the X2 local API is reverse-engineered; SofaBaton firmware updates may require app updates
 

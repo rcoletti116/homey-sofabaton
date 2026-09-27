@@ -1,6 +1,6 @@
 SofaBaton for Homey
 
-Local, cloud-free integration between the SofaBaton X2 universal remote hub and Homey Pro. Press buttons on any X2-paired remote to control Homey devices directly — no cloud, no MQTT broker required.
+Local, cloud-free integration between the SofaBaton X2 universal remote hub and Homey Pro. Press buttons on any X2-paired remote to control Homey devices directly — no cloud required. An MQTT broker is optional (needed only for activity-change triggers).
 
 
 FEATURES
@@ -8,7 +8,7 @@ FEATURES
 - LAN-only — all communication stays on your local network; no Homey Cloud required
 - Button → Homey action — bind any X2 remote button to a Homey device action (lights, switches, climate, media, etc.) without writing a Flow
 - Button → Flow trigger — "A button was pressed" trigger card fires for every button press, with the device name, button name, key ID, and active activity as tokens
-- Activity tracking — "The active activity changed" trigger card fires whenever the X2 switches activities
+- Activity tracking — "The active activity changed" trigger card fires whenever the X2 switches activities (requires MQTT broker)
 - WiFi devices — create virtual HTTP devices on the X2 hub so SofaBaton remotes can call back into Homey
 - Proxy Control — temporarily release the hub so the SofaBaton mobile app can connect directly, then Homey reconnects automatically
 - Flow actions — send any X2 command, start or stop activities, create WiFi devices, and release the hub
@@ -20,6 +20,7 @@ REQUIREMENTS
 - Homey Pro 2023 or later, firmware >= 12.0.0
 - SofaBaton X2 hub on the same LAN subnet as Homey
 - Homey local API token (optional — needed only for device-binding and auto-flow features in the Manage page)
+- MQTT broker (optional — needed only for the "activity changed" Flow trigger; all other features work without it)
 
 Note: The SofaBaton X1 and X1S are not supported. The X2 uses a different local protocol.
 
@@ -48,7 +49,7 @@ FLOW CARDS
 
 Triggers:
 - A button was pressed — fires on any X2 button press; tokens: button, device_name, device_id, key_id, activity_id
-- The active activity changed — fires when the X2 switches activities; tokens: activity_name, activity_id, previous_activity_id
+- The active activity changed — fires when the X2 switches activities; tokens: activity_name, activity_id, previous_activity_id (requires MQTT broker configured in device settings)
 
 Actions:
 - Send SofaBaton command
@@ -73,6 +74,7 @@ KNOWN LIMITATIONS
 
 - X2 only — X1 and X1S are not supported
 - Single hub — only one X2 per Homey device is supported
+- Activity triggers require MQTT — the X2 hub only broadcasts activity state over MQTT; without a broker configured, the "activity changed" trigger will not fire
 - LAN access required — the Manage page is not reachable outside your local network (by design)
 - Unofficial protocol — the X2 local API is reverse-engineered; SofaBaton firmware updates may require app updates
 
