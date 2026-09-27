@@ -416,7 +416,7 @@ class SofaBatonClient {
       // Fire onActivityChange immediately if the activity is already in the catalog,
       // otherwise refresh first then fire.
       const newId = f.payload.length > 0 ? f.payload[0] : null;
-      this.homey.log(`ACK_READY: payload=${f.payload.toString('hex')} newId=${newId}`);
+      this.options.dlog?.(`ACK_READY: payload=${f.payload.toString('hex')} newId=${newId}`);
       if (newId != null && newId !== 0) {
         const act = this.activities.get(newId);
         if (act) {
@@ -2111,10 +2111,12 @@ class SofaBatonDevice extends Homey.Device {
         this.setStoreValue('banner_mac', mac).catch(() => {});
         this.setStoreValue('banner_opcode', this.sofaBaton._bannerOpcode || 0).catch(() => {});
       },
+      dlog: msg => this._dlog(msg),
     });
 
     this._hubPausedUntil = 0;
     this._pauseTimer     = null;
+    this._logBuf         = [];
 
     if (!this.hasCapability('app_mode'))   await this.addCapability('app_mode');
     if (!this.hasCapability('find_remote')) await this.addCapability('find_remote');
@@ -2931,6 +2933,13 @@ class SofaBatonDevice extends Homey.Device {
         return;
       }
 
+      if (req.method === 'GET' && urlPath === '/manage/debug-logs') {
+        const body = JSON.stringify({ logs: this._logBuf || [] });
+        res.writeHead(200, { 'Content-Type': 'application/json', 'Content-Length': String(Buffer.byteLength(body)) });
+        res.end(body);
+        return;
+      }
+
       if (req.method === 'POST' && urlPath === '/manage/release') {
         let raw = '';
         req.on('data', c => { raw += c; });
@@ -3108,13 +3117,21 @@ class SofaBatonDevice extends Homey.Device {
     };
   }
 
+  _dlog(msg) {
+    this.homey.log(msg);
+    if (!this._logBuf) this._logBuf = [];
+    this._logBuf.push(`${new Date().toISOString()} ${msg}`);
+    if (this._logBuf.length > 100) this._logBuf.shift();
+  }
+
   async handleActivityChange(id, name) {
+    this._dlog(`ACTIVITY_CHANGE: id=${id} name="${name}"`);
     const previous = await Promise.resolve(this.getStoreValue('current_activity_id')).catch(() => null);
     await this.setStoreValue('current_activity_id', id).catch(() => {});
     this.activityTrigger.trigger(
       this,
       { activity_name: name, activity_id: id, previous_activity_id: previous },
-      { activity_id: id }            // state used by run listener for filtering
+      { activity_id: id }
     ).catch(e => this.homey.error(`Activity trigger error: ${e.message}`));
   }
 
