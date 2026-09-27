@@ -444,7 +444,7 @@ class SofaBatonClient {
     const id = p[7];
     const name = bestUtf16Label(p, 16, 128) || `Activity ${id}`;
     this.activities.set(id, { id, name });
-    this.options.dlog?.(`ACT_ROW: id=${id} name="${name}"`);
+    this.options.dlog?.(`ACT_ROW: id=${id} name="${name}" raw=${p.subarray(0, Math.min(48, p.length)).toString('hex')}`);
   }
 
   parseDeviceRow(p) {
