@@ -412,10 +412,9 @@ class SofaBatonClient {
       return;
     }
     if (f.opcode === OP.ACK_READY) {
-      // ACK_READY signals something changed; payload is always 0x00 (not the activity ID).
-      // Refresh activity rows — parseActivityRow will log hdr bytes so we can find
-      // the "currently active" flag, then fire onActivityChange from there.
       this.options.dlog?.(`ACK_READY: payload=${f.payload.toString('hex')}`);
+      this._catchUnknown = true;
+      setTimeout(() => { this._catchUnknown = false; }, 2000);
       setTimeout(() => this.refreshActivities().catch(e => this.homey.error(e.message)), 250);
       return;
     }
@@ -426,6 +425,9 @@ class SofaBatonClient {
         this._accumulateCommandPage(f.payload, f.opcode, this.pendingCommandDeviceId);
       return;
     }
+    if (this._catchUnknown) {
+      this.options.dlog?.(`UNKNOWN_FRAME: opcode=0x${f.opcode.toString(16)} payload=${f.payload.subarray(0,16).toString('hex')}`);
+    }
   }
 
   parseActivityRow(p) {
@@ -433,8 +435,8 @@ class SofaBatonClient {
     const id = p[7];
     const name = bestUtf16Label(p, 8, 60) || `Activity ${id}`;
     this.activities.set(id, { id, name });
-    // Log first 8 bytes so we can identify the "current activity" flag
-    this.options.dlog?.(`ACT_ROW: id=${id} name="${name}" hdr=${p.subarray(0,8).toString('hex')}`);
+    // Log first 16 bytes to find the "current activity" flag
+    this.options.dlog?.(`ACT_ROW: id=${id} name="${name}" hdr=${p.subarray(0, Math.min(16, p.length)).toString('hex')}`);
   }
 
   parseDeviceRow(p) {
