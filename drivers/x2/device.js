@@ -101,16 +101,26 @@ function utf16be(buf) {
   const even = buf.length - (buf.length % 2);
   const swapped = Buffer.alloc(even);
   for (let i = 0; i < even; i += 2) { swapped[i] = buf[i + 1]; swapped[i + 1] = buf[i]; }
-  const s = swapped.toString('utf16le');
-  const end = s.indexOf('\x00');
-  return (end >= 0 ? s.slice(0, end) : s).trim();
+  return swapped.toString('utf16le').replace(/\x00/g, '').trim();
 }
 
 function cleanLabel(s) { return String(s || '').replace(/[\x00-\x1f]/g, '').trim(); }
 
-function bestUtf16Label(payload, start = 0, width = 60) {
-  if (payload.length < start + 2) return '';
-  return cleanLabel(utf16be(payload.subarray(start, Math.min(payload.length, start + width))));
+// Scan payload for the longest run of non-null UTF-16BE pairs, decode it.
+// Handles variable-length headers and repeated name fields in catalog rows.
+function bestUtf16Label(payload, start = 0, width = 128) {
+  const stop = Math.min(payload.length - 1, start + width);
+  let best = '';
+  let i = start;
+  while (i < stop - 1) {
+    if (payload[i] === 0 && payload[i + 1] === 0) { i += 2; continue; }
+    let j = i;
+    while (j < stop - 1 && !(payload[j] === 0 && payload[j + 1] === 0)) j += 2;
+    const candidate = cleanLabel(utf16be(payload.subarray(i, j)));
+    if (candidate.length > best.length) best = candidate;
+    i = j + 2;
+  }
+  return best;
 }
 
 function parseFrameStream(buffer) {

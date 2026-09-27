@@ -1,4 +1,7 @@
 {
+  "0.2.101": {
+    "en": "Fix activity and device names: scan for longest UTF-16 run to handle variable header padding"
+  },
   "0.2.100": {
     "en": "Fix activity and device names duplicating (stop at null terminator)"
   },
