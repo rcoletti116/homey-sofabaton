@@ -534,14 +534,17 @@ class SofaBatonClient {
     });
     await this.mqtt.connect();
     const mac = this.bannerMac;
-    // activity_control_down = hub publishes current state here
+    const macLower = mac.toLowerCase();
+    // Subscribe both cases — hub MAC format in topic varies by firmware
     this.mqtt.subscribe(`activity/${mac}/activity_control_down`);
-    // {MAC}/up = hub publishes button events from wifi_mqtt devices here
+    this.mqtt.subscribe(`activity/${macLower}/activity_control_down`);
     this.mqtt.subscribe(`${mac}/up`);
-    this.homey.log(`MQTT subscribed: activity/${mac}/activity_control_down + ${mac}/up`);
+    this.mqtt.subscribe(`${macLower}/up`);
+    this.options.dlog?.(`MQTT connected; mac=${mac} subscribed activity+up (upper+lower)`);
   }
 
   handleMqtt(topic, payload) {
+    this.options.dlog?.(`MQTT msg: topic=${topic} payload=${payload.slice(0,120)}`);
     let data;
     try { data = JSON.parse(payload); } catch { data = payload.trim(); }
 
