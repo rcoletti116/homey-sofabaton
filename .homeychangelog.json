@@ -1,4 +1,7 @@
 {
+  "0.2.99": {
+    "en": "Fix activity and device names showing a garbage first character"
+  },
   "0.2.98": {
     "en": "Add MQTT requirement hint to activity-changed Flow trigger card"
   },

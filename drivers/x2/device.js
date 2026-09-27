@@ -430,17 +430,16 @@ class SofaBatonClient {
   parseActivityRow(p) {
     if (p.length < 8) return;
     const id = p[7];
-    const name = bestUtf16Label(p, 8, 60) || `Activity ${id}`;
+    const name = bestUtf16Label(p, 16, 128) || `Activity ${id}`;
     this.activities.set(id, { id, name });
-    // Log first 16 bytes to find the "current activity" flag
-    this.options.dlog?.(`ACT_ROW: id=${id} name="${name}" hdr=${p.subarray(0, Math.min(16, p.length)).toString('hex')}`);
+    this.options.dlog?.(`ACT_ROW: id=${id} name="${name}"`);
   }
 
   parseDeviceRow(p) {
     if (p.length < 8) return;
     const id = p[7];
     const type = p.length > 8 ? p[8] : undefined;
-    const name = bestUtf16Label(p, 12, 60) || `Device ${id}`;
+    const name = bestUtf16Label(p, 16, 128) || `Device ${id}`;
     const rawHex = p.subarray(0, Math.min(p.length, 20)).toString('hex');
     this.devices.set(id, { id, name, type, rawHex });
     this.homey.log(`DEVICE: id=${id} name="${name}" type=0x${(type||0).toString(16)} raw=${rawHex}`);
