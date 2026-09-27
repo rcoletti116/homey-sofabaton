@@ -412,31 +412,11 @@ class SofaBatonClient {
       return;
     }
     if (f.opcode === OP.ACK_READY) {
-      // Payload byte 0 = newly-active activity ID (0 = no activity / off).
-      // Fire onActivityChange immediately if the activity is already in the catalog,
-      // otherwise refresh first then fire.
-      const newId = f.payload.length > 0 ? f.payload[0] : null;
-      this.options.dlog?.(`ACK_READY: payload=${f.payload.toString('hex')} newId=${newId}`);
-      if (newId != null && newId !== 0) {
-        const act = this.activities.get(newId);
-        if (act) {
-          this.currentActivityId   = newId;
-          this.currentActivityName = act.name;
-          this.onActivityChange(newId, act.name);
-        } else {
-          // Activity not yet catalogued — refresh then fire
-          this.refreshActivities().then(() => {
-            const a = this.activities.get(newId);
-            this.currentActivityId   = newId;
-            this.currentActivityName = a?.name || `Activity ${newId}`;
-            this.onActivityChange(newId, this.currentActivityName);
-          }).catch(e => this.homey.error(e.message));
-        }
-      } else {
-        // newId 0 or missing — activity stopped; still refresh catalog for housekeeping
-        if (newId === 0) this.onActivityChange(0, '');
-        setTimeout(() => this.refreshActivities().catch(e => this.homey.error(e.message)), 250);
-      }
+      // ACK_READY signals something changed; payload is always 0x00 (not the activity ID).
+      // Refresh activity rows — parseActivityRow will log hdr bytes so we can find
+      // the "currently active" flag, then fire onActivityChange from there.
+      this.options.dlog?.(`ACK_READY: payload=${f.payload.toString('hex')}`);
+      setTimeout(() => this.refreshActivities().catch(e => this.homey.error(e.message)), 250);
       return;
     }
     if (f.opcode === 0xD53B) { this.parseActivityRow(f.payload); return; }
@@ -453,7 +433,8 @@ class SofaBatonClient {
     const id = p[7];
     const name = bestUtf16Label(p, 8, 60) || `Activity ${id}`;
     this.activities.set(id, { id, name });
-    this.homey.log(`ACTIVITY: id=${id} name="${name}"`);
+    // Log first 8 bytes so we can identify the "current activity" flag
+    this.options.dlog?.(`ACT_ROW: id=${id} name="${name}" hdr=${p.subarray(0,8).toString('hex')}`);
   }
 
   parseDeviceRow(p) {
