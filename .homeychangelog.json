@@ -1,4 +1,7 @@
 {
+  "0.2.100": {
+    "en": "Fix activity and device names duplicating (stop at null terminator)"
+  },
   "0.2.99": {
     "en": "Fix activity and device names showing a garbage first character"
   },

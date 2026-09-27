@@ -101,7 +101,9 @@ function utf16be(buf) {
   const even = buf.length - (buf.length % 2);
   const swapped = Buffer.alloc(even);
   for (let i = 0; i < even; i += 2) { swapped[i] = buf[i + 1]; swapped[i + 1] = buf[i]; }
-  return swapped.toString('utf16le').replace(/\x00/g, '').trim();
+  const s = swapped.toString('utf16le');
+  const end = s.indexOf('\x00');
+  return (end >= 0 ? s.slice(0, end) : s).trim();
 }
 
 function cleanLabel(s) { return String(s || '').replace(/[\x00-\x1f]/g, '').trim(); }
