@@ -541,7 +541,6 @@ class SofaBatonClient {
   }
 
   handleMqtt(topic, payload) {
-    this.options.dlog?.(`MQTT msg: topic=${topic} payload=${payload.slice(0,120)}`);
     let data;
     try { data = JSON.parse(payload); } catch { data = payload.trim(); }
 
