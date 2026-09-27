@@ -59,6 +59,9 @@
       "titleFormatted": {
         "en": "[[activity]] became active"
       },
+      "hint": {
+        "en": "Requires an MQTT broker. Configure the MQTT Host in device settings — the X2 hub only publishes activity state over MQTT."
+      },
       "args": [
         {
           "name": "activity",

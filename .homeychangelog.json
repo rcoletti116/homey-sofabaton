@@ -1,4 +1,7 @@
 {
+  "0.2.98": {
+    "en": "Add MQTT requirement hint to activity-changed Flow trigger card"
+  },
   "0.2.93": {
     "en": "Fix proxy mDNS announcing X1 on first boot by persisting hub model opcode across restarts"
   },
