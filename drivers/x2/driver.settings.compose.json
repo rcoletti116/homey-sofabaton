@@ -36,5 +36,12 @@
     "type": "password",
     "label": { "en": "MQTT password (optional)" },
     "value": ""
+  },
+  {
+    "id": "debug_logging",
+    "type": "checkbox",
+    "label": { "en": "Enable debug logging" },
+    "hint": { "en": "Buffers internal log entries for the Manage page debug endpoint. Disable when not troubleshooting." },
+    "value": false
   }
 ]

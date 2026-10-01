@@ -8,7 +8,7 @@ FEATURES
 - LAN-only — all communication stays on your local network; no Homey Cloud required
 - Button → Homey action — bind any X2 remote button to a Homey device action (lights, switches, climate, media, etc.) without writing a Flow
 - Button → Flow trigger — "A button was pressed" trigger card fires for every button press, with the device name, button name, key ID, and active activity as tokens
-- Activity tracking — "The active activity changed" trigger card fires whenever the X2 switches activities (requires MQTT broker)
+- Activity tracking — "The active activity changed" trigger card fires whenever the X2 switches activities (requires MQTT broker — see Requirements)
 - WiFi devices — create virtual HTTP devices on the X2 hub so SofaBaton remotes can call back into Homey
 - Proxy Control — temporarily release the hub so the SofaBaton mobile app can connect directly, then Homey reconnects automatically
 - Flow actions — send any X2 command, start or stop activities, create WiFi devices, and release the hub

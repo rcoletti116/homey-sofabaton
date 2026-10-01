@@ -425,7 +425,10 @@ class SofaBatonClient {
     }
     if (f.opcode === OP.ACK_READY) {
       this.options.dlog?.(`ACK_READY: payload=${f.payload.toString('hex')}`);
-      setTimeout(() => this.refreshActivities().catch(e => this.homey.error(e.message)), 250);
+      // Skip while SofaBaton app is proxied — unsolicited REQ_ACTIVITIES bytes would
+      // be forwarded to the app and corrupt its in-flight catalog or RF learning exchange.
+      if (!this._appSocket)
+        setTimeout(() => this.refreshActivities().catch(e => this.homey.error(e.message)), 250);
       return;
     }
     if (f.opcode === 0xD53B) { this.parseActivityRow(f.payload); return; }
@@ -435,7 +438,8 @@ class SofaBatonClient {
         this._accumulateCommandPage(f.payload, f.opcode, this.pendingCommandDeviceId);
       return;
     }
-    // Log all unrecognised frames so we can identify the activity-change notification
+    // Silently drop unrecognised 0x5D-family frames (compact command-catalog rows).
+    if ((f.opcode & 0xff) === 0x5D) return;
     this.options.dlog?.(`UNKNOWN: opcode=0x${f.opcode.toString(16)} payload=${f.payload.subarray(0,16).toString('hex')}`);
   }
 
@@ -566,6 +570,9 @@ class SofaBatonClient {
   }
 
   async refreshActivities() {
+    // Skip while SofaBaton app is proxied — REQ_ACTIVITIES responses would be forwarded
+    // to the app as unsolicited bytes, corrupting its in-flight catalog exchange.
+    if (this._appSocket) return [...this.activities.values()];
     this.activities.clear();
     await this.request(OP.REQ_ACTIVITIES, Buffer.alloc(0), 700);
     await new Promise(r => setTimeout(r, 200));
@@ -573,6 +580,9 @@ class SofaBatonClient {
   }
 
   async refreshCatalog() {
+    // Skip while SofaBaton app is proxied — hub responses would be forwarded as unsolicited
+    // bytes, corrupting the app's catalog/RF exchange. Catalog stays as-is until app disconnects.
+    if (this._appSocket) return;
     this.activities.clear();
     this.devices.clear();
     this.commands.clear();
@@ -607,9 +617,11 @@ class SofaBatonClient {
   async startActivity(activityId) { return this.sendCommand(Number(activityId), 0xC6); }
 
   async stopActivity() {
-    const id = this.currentActivityId != null ? this.currentActivityId : null;
-    if (id == null) return this.sendCommand(0xff, 0xC7);
-    return this.sendCommand(id, 0xC7);
+    if (!this.socket || !this.connected) throw new Error('SofaBaton X2 not connected');
+    const id = (this.currentActivityId != null ? this.currentActivityId : 0xff) & 0xff;
+    // Write directly without queuing — stop must be responsive even during catalog refresh.
+    this.socket.write(frame(OP.REQ_ACTIVATE, Buffer.from([id, 0xC7])));
+    return true;
   }
 
   async findRemote() { await this.request(OP.FIND_REMOTE_X2, Buffer.from([0, 0, 8]), 100); return true; }
@@ -749,25 +761,20 @@ class SofaBatonClient {
     return Buffer.concat([body, Buffer.from([(s - 0x02) & 0xff])]);
   }
 
-  // Create a WiFi device on the X2 hub.
-  // transport: 'http' (default) = HTTP callbacks; 'mqtt' = hub publishes to MQTT broker.
-  // callbackPort only used for http transport. Returns { deviceId, name, commands, transport }.
-  async createWifiDevice(deviceName, commandNames, callbackPort, transport = 'http') {
+  // Create a WiFi device on the X2 hub (always HTTP callbacks; MQTT is for event reception only).
+  // Returns { deviceId, name, commands }.
+  async createWifiDevice(deviceName, commandNames, callbackPort) {
     if (!this.socket || !this.connected) throw new Error('SofaBaton X2 not connected');
     if (!this.bannerMac) throw new Error('Hub MAC not yet received — wait for catalog ready');
+    if (this._appSocket) throw new Error('SofaBaton app is connected — close it before creating WiFi devices');
 
-    const isMqtt  = transport === 'mqtt';
-    const codeType = isMqtt ? 0x20 : 0x1C; // 0x20=wifi_mqtt, 0x1C=wifi_ip per HA protocol_const.py
-    const cmds    = commandNames.slice(0, 10);
-    const mac     = this.bannerMac;
+    const codeType = 0x1C; // wifi_ip (HTTP callbacks)
+    const cmds     = commandNames.slice(0, 10);
+    const mac      = this.bannerMac;
+    const homeyIp  = localIPv4(this.ip);
+    const port     = Number(callbackPort) || BASE_HTTP_PORT;
 
-    if (isMqtt) {
-      this.homey.log(`WiFi CREATE (mqtt): "${deviceName}" ${cmds.length} cmd(s)`);
-    } else {
-      const homeyIp = localIPv4(this.ip);
-      const port    = Number(callbackPort) || BASE_HTTP_PORT;
-      this.homey.log(`WiFi CREATE (http): "${deviceName}" ${cmds.length} cmd(s) → ${homeyIp}:${port}`);
-    }
+    this.homey.log(`WiFi CREATE: "${deviceName}" ${cmds.length} cmd(s) → ${homeyIp}:${port}`);
 
     // Step 1 — CREATE_DEVICE_HEAD → ACK 0x0107 payload[0] = assigned device_id
     const createPayload = this._buildCreateDevicePayload(deviceName, 0xFF, false, codeType);
@@ -775,35 +782,21 @@ class SofaBatonClient {
     this.socket.write(familyFrame(0x07, createPayload));
     const createAck = await step1Ack;
     const deviceId  = createAck.payload[0];
-    this.homey.log(`  Hub assigned device_id=${deviceId}`);
+    this.homey.log(`  Hub assigned device_id=${deviceId} (step1 payload=${createAck.payload.toString('hex')})`);
+    if (deviceId === 0x00 || deviceId === 0xFF)
+      throw new Error(`Hub rejected CREATE_DEVICE_HEAD (device_id=${deviceId}) — hub may be at device limit or have stale partial entries; delete unused WiFi devices and retry`);
 
-    // Step 2 — Command records × N → ACK 0x0103 each
-    // http: full DEFINE_IP_CMD payload (HTTP method + URL + headers)
-    // mqtt: 2-byte inert record [0x00, slot] — hub ignores the body and publishes to {mac}/up on press
-    if (isMqtt) {
-      for (let i = 0; i < cmds.length; i++) {
-        const slot = i + 1;
-        const ackP = this._waitForAck(0x0103, 5000);
-        this.socket.write(familyFrame(0x0E, Buffer.from([0x00, slot])));
-        const ack = await ackP;
-        if (ack.payload[0] !== 0x00)
-          throw new Error(`CMD slot ${slot} rejected (status ${ack.payload[0]})`);
-        this.homey.log(`  Slot ${slot} "${cmds[i]}" OK (mqtt)`);
-      }
-    } else {
-      const homeyIp     = localIPv4(this.ip);
-      const port        = Number(callbackPort) || BASE_HTTP_PORT;
-      const encodedName = encodeURIComponent(deviceName.toLowerCase());
-      for (let i = 0; i < cmds.length; i++) {
-        const slot = i + 1;
-        const path = `/launch/${mac}/wf/${encodedName}/${i}/short`;
-        const ackP = this._waitForAck(0x0103, 5000);
-        this.socket.write(familyFrame(0x0E, this._buildDefineIpCmd(slot, deviceId, cmds[i], homeyIp, port, path)));
-        const ack = await ackP;
-        if (ack.payload[0] !== 0x00)
-          throw new Error(`DEFINE_IP_CMD slot ${slot} rejected (status ${ack.payload[0]})`);
-        this.homey.log(`  Slot ${slot} "${cmds[i]}" OK (http)`);
-      }
+    // Step 2 — DEFINE_IP_CMD × N → ACK 0x0103 each
+    const encodedName = encodeURIComponent(deviceName.toLowerCase());
+    for (let i = 0; i < cmds.length; i++) {
+      const slot = i + 1;
+      const path = `/launch/${mac}/wf/${encodedName}/${i}/short`;
+      const ackP = this._waitForAck(0x0103, 5000);
+      this.socket.write(familyFrame(0x0E, this._buildDefineIpCmd(slot, deviceId, cmds[i], homeyIp, port, path)));
+      const ack = await ackP;
+      if (ack.payload[0] !== 0x00)
+        throw new Error(`DEFINE_IP_CMD slot ${slot} rejected (status ${ack.payload[0]})`);
+      this.homey.log(`  Slot ${slot} "${cmds[i]}" OK`);
     }
 
     // Step 3 — PREPARE_SAVE (family 0x41, payload [deviceId, 0x04])
@@ -845,13 +838,14 @@ class SofaBatonClient {
     this._wifiDeviceCommands.set(deviceId, localCmds);
     this._wifiCommandsByName.set(deviceName.toLowerCase(), { deviceId, cmds: localCmds });
 
-    this.homey.log(`WiFi CREATE done: id=${deviceId} name="${deviceName}" transport=${transport}`);
-    return { deviceId, name: deviceName, commands: cmds, transport };
+    this.homey.log(`WiFi CREATE done: id=${deviceId} name="${deviceName}"`);
+    return { deviceId, name: deviceName, commands: cmds };
   }
 
   // Delete a WiFi device from the X2 hub by its hub device ID.
   async deleteWifiDevice(deviceId) {
     if (!this.socket || !this.connected) throw new Error('SofaBaton X2 not connected');
+    if (this._appSocket) throw new Error('SofaBaton app is connected — close it before deleting WiFi devices');
     const id = deviceId & 0xff;
     this.homey.log(`WiFi DELETE: id=${id}`);
     // OP_DELETE_DEVICE = 0x0109, per HA protocol_const.py — mirrors createWifiDevice's ACK pattern
@@ -1478,7 +1472,7 @@ function renderDevices(){
     out+='</div></div>';
     out+='<div style="display:flex;gap:5px;flex-shrink:0" onclick="event.stopPropagation()">';
     out+='<button class="btn-x" onclick=\\'reRegisterDevice('+JSON.stringify(w.name)+','+JSON.stringify(w.commands)+')\\'>Fix</button>';
-    out+='<button class="btn-warn" onclick=\\'deleteWifiDevice('+JSON.stringify(w.name)+')\\'>Del</button>';
+    out+='<button class="btn-warn" onclick=\\'deleteWifiDevice(event,'+JSON.stringify(w.name)+')\\'>Del</button>';
     out+='</div></div>';
     out+='<div id="wr-'+safeName+'" style="font-size:11px;color:#2e7d32;min-height:0;padding:0"></div>';
     if(isExp){
@@ -1531,10 +1525,18 @@ function reRegisterDevice(name,commands){
   .then(function(r){if(el) el.textContent=r.ok?'✓ Callback URL updated':'✗ '+r.error;if(r.ok)setTimeout(loadData,2000);})
   .catch(function(e){if(el) el.textContent='✗ '+e.message;});
 }
-function deleteWifiDevice(name){
-  if(!confirm('Delete WiFi device "'+name+'"?')) return;
+var _deleteArmed=null;
+function deleteWifiDevice(ev,name){
+  var btn=ev.target;
+  if(_deleteArmed!==name){
+    _deleteArmed=name;
+    var prev=btn.textContent;btn.textContent='Confirm?';btn.style.background='#fff0f0';
+    setTimeout(function(){if(_deleteArmed===name){_deleteArmed=null;btn.textContent=prev;btn.style.background='';}},3000);
+    return;
+  }
+  _deleteArmed=null;
   fetch('/manage/wifi-device/'+encodeURIComponent(name),{method:'DELETE'})
-  .then(function(){if(expandedDevice===name)expandedDevice=null;loadData();}).catch(function(e){alert('Error: '+e.message);});
+  .then(function(){if(expandedDevice===name)expandedDevice=null;loadData();}).catch(function(e){btn.textContent='Error';});
 }
 function addCmd(){
   var rows=document.querySelectorAll('#cmd-list .cmd-row');
@@ -1925,20 +1927,28 @@ function hubDevLoad(){
         return '<tr style="border-bottom:1px solid #eee">'
           +'<td style="padding:6px 4px;font-weight:600">'+esc(dev.name)+'</td>'
           +'<td style="padding:6px 4px;color:#888;font-size:12px">ID '+dev.id+(dev.type!=null?' type='+dev.type:'')+'</td>'
-          +'<td style="padding:6px 4px;text-align:right"><button onclick="hubDevDelete('+dev.id+','+JSON.stringify(dev.name)+')" class="btn-warn" style="font-size:11px;padding:2px 8px">Delete</button></td>'
+          +'<td style="padding:6px 4px;text-align:right"><button onclick="hubDevDelete(event,'+dev.id+','+JSON.stringify(dev.name)+')" class="btn-warn" style="font-size:11px;padding:2px 8px">Delete</button></td>'
           +'</tr>';
       }).join('')
       +'</table>';
   }).catch(function(e){el.textContent='Error: '+e.message;});
 }
-function hubDevDelete(id,name){
-  if(!confirm('Delete "'+name+'" (ID '+id+') from the hub? This cannot be undone.')) return;
+var _hubDelArmed=null;
+function hubDevDelete(ev,id,name){
+  var btn=ev.target;
+  if(_hubDelArmed!==id){
+    _hubDelArmed=id;
+    var prev=btn.textContent;btn.textContent='Confirm?';btn.style.background='#fff0f0';
+    setTimeout(function(){if(_hubDelArmed===id){_hubDelArmed=null;btn.textContent=prev;btn.style.background='';}},3000);
+    return;
+  }
+  _hubDelArmed=null;
   fetch('/manage/wifi-device-by-id/'+id,{method:'DELETE'})
     .then(function(r){return r.json();})
     .then(function(r){
       if(r.ok){hubDevLoad();}
-      else{alert('Delete failed: '+(r.error||'unknown'));}
-    }).catch(function(e){alert('Error: '+e.message);});
+      else{btn.textContent='Error: '+(r.error||'unknown');}
+    }).catch(function(e){btn.textContent='Error';});
 }
 
 // ── Token ─────────────────────────────────────────────────────────
@@ -2877,11 +2887,9 @@ class SofaBatonDevice extends Homey.Device {
             const { name, commands } = JSON.parse(body);
             if (!this.sofaBaton?.connected) throw new Error('Hub not connected');
             const cfgs = this.getStoreValue('wifi_configs') || [];
-            const existing = cfgs.find(c => c.name.toLowerCase() === name.toLowerCase());
-            const transport = existing?.transport || (this.sofaBaton.options.mqtt?.host ? 'mqtt' : 'http');
-            const result = await this.sofaBaton.createWifiDevice(name, commands, this._callbackPort, transport);
+            const result = await this.sofaBaton.createWifiDevice(name, commands, this._callbackPort);
             const idx2 = cfgs.findIndex(c => c.name.toLowerCase() === name.toLowerCase());
-            if (idx2 !== -1) { cfgs[idx2] = { name, commands, transport }; } else { cfgs.push({ name, commands, transport }); }
+            if (idx2 !== -1) { cfgs[idx2] = { name, commands }; } else { cfgs.push({ name, commands }); }
             await this.setStoreValue('wifi_configs', cfgs);
             sendJson(res, { ok: true, result });
           } catch(e) { sendJson(res, { ok: false, error: e.message }); }
@@ -2970,14 +2978,12 @@ class SofaBatonDevice extends Homey.Device {
               this.sofaBaton._wifiCommandsByName.set(cleanName.toLowerCase(), { deviceId: existingDev.id, cmds: localCmds });
               result = { deviceId: existingDev.id, name: existingDev.name, commands: cleanCmds, existed: true };
             } else {
-              const transport = this.sofaBaton.options.mqtt?.host ? 'mqtt' : 'http';
-              result = await this.sofaBaton.createWifiDevice(cleanName, cleanCmds, this._callbackPort, transport);
+              result = await this.sofaBaton.createWifiDevice(cleanName, cleanCmds, this._callbackPort);
             }
-            const transport = result.transport || 'http';
             const cfgs = this.getStoreValue('wifi_configs') || [];
             const idx = cfgs.findIndex(c => c.name.toLowerCase() === cleanName.toLowerCase());
-            if (idx !== -1) cfgs[idx] = { name: result.name, commands: cleanCmds, transport };
-            else cfgs.push({ name: result.name, commands: cleanCmds, transport });
+            if (idx !== -1) cfgs[idx] = { name: result.name, commands: cleanCmds };
+            else cfgs.push({ name: result.name, commands: cleanCmds });
             await this.setStoreValue('wifi_configs', cfgs);
             const body = JSON.stringify({ ok: true, result });
             res.writeHead(200, { 'Content-Type': 'application/json', 'Content-Length': String(Buffer.byteLength(body)) });
@@ -3107,10 +3113,10 @@ class SofaBatonDevice extends Homey.Device {
   }
 
   _dlog(msg) {
-    this.homey.log(msg);
+    if (!this.getSetting('debug_logging')) return;
     if (!this._logBuf) this._logBuf = [];
     this._logBuf.push(`${new Date().toISOString()} ${msg}`);
-    if (this._logBuf.length > 100) this._logBuf.shift();
+    if (this._logBuf.length > 500) this._logBuf.shift();
   }
 
   async handleActivityChange(id, name) {
