@@ -8,7 +8,7 @@
     "en": "SofaBaton"
   },
   "description": {
-    "en": "Local, cloud-free control of SofaBaton X2 hubs. Bind remote buttons to Homey devices, trigger Flows on button presses, track activities, and coexist with the SofaBaton mobile app — all over LAN."
+    "en": "Local, cloud-free control of SofaBaton X2 and X1S hubs — no MQTT broker required. Bind remote buttons to Homey devices, trigger Flows, create virtual devices, and coexist with the SofaBaton mobile app — all over LAN."
   },
   "tags": {
     "en": [
