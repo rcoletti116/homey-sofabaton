@@ -1,4 +1,7 @@
 {
+  "0.2.119": {
+    "en": "Add X1S support (untested — shares the X2 binary protocol); update app description to clarify no MQTT broker required"
+  },
   "0.2.118": {
     "en": "Fix Stop Activity flow card timeout; fix duplicate devices and missing RF type when SofaBaton app is also open; fix WiFi device creation (always uses HTTP callbacks); fix Manage page delete buttons; debug logging now opt-in via device settings"
   },
