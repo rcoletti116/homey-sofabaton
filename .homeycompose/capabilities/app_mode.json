@@ -11,5 +11,5 @@
   "uiComponent": "toggle",
   "uiQuickAction": true,
   "insights": false,
-  "icon": "./assets/icon.svg"
+  "icon": "./assets/capabilities/app_mode.svg"
 }

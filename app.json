@@ -547,7 +547,7 @@
       "uiComponent": "toggle",
       "uiQuickAction": true,
       "insights": false,
-      "icon": "./assets/icon.svg"
+      "icon": "./assets/capabilities/app_mode.svg"
     },
     "find_remote": {
       "type": "boolean",
@@ -562,7 +562,7 @@
       "uiComponent": "button",
       "uiQuickAction": false,
       "insights": false,
-      "icon": "./assets/icon.svg"
+      "icon": "./assets/capabilities/find_remote.svg"
     }
   }
 }

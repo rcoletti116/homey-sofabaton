@@ -11,5 +11,5 @@
   "uiComponent": "button",
   "uiQuickAction": false,
   "insights": false,
-  "icon": "./assets/icon.svg"
+  "icon": "./assets/capabilities/find_remote.svg"
 }

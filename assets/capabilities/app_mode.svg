@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Phone silhouette with screen cutout (even-odd = screen is transparent) -->
+  <path fill="#000" fill-rule="evenodd" d="
+    M30 10 Q30 4 36 4 H64 Q70 4 70 10 V90 Q70 96 64 96 H36 Q30 96 30 90 Z
+    M36 18 H64 V72 H36 Z
+    M44 80 H56 V84 H44 Z
+  "/>
+</svg>
