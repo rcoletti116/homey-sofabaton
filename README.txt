@@ -67,7 +67,7 @@ Homey holds the persistent hub connection and proxies traffic from the SofaBaton
 
 One-time setup: In the Manage page > Config tab, tap a release button (5 / 10 / 30 min). While released, open the SofaBaton app > Hub settings > set the hub IP to your Homey's local IP. From then on, the SofaBaton app routes through Homey.
 
-Day-to-day: Tap any release button when you need the SofaBaton app; Homey resumes automatically when the timer expires, or tap "Resume Homey now".
+Day-to-day: Tap any release button when you need the SofaBaton app unproxied; Homey resumes automatically when the timer expires, or tap "Resume Homey now".
 
 
 KNOWN LIMITATIONS
