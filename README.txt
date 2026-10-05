@@ -22,7 +22,7 @@ REQUIREMENTS
 - Homey local API token (optional — needed only for device-binding and auto-flow features in the Manage page)
 - MQTT broker (optional — needed only for the "activity changed" Flow trigger; all other features work without it)
 
-Note: The SofaBaton X1 and X1S are not supported. The X2 uses a different local protocol.
+Note: The X1S shares the X2 binary protocol and should work, but is untested due to hardware availability. The original X1 uses a different protocol and is not supported.
 
 
 SETUP
@@ -63,7 +63,7 @@ Actions:
 
 PROXY CONTROL
 
-The SofaBaton mobile app and Homey cannot both hold the hub connection simultaneously. Proxy Control lets them coexist.
+Homey holds the persistent hub connection and proxies traffic from the SofaBaton mobile app, so both work simultaneously.
 
 One-time setup: In the Manage page > Config tab, tap a release button (5 / 10 / 30 min). While released, open the SofaBaton app > Hub settings > set the hub IP to your Homey's local IP. From then on, the SofaBaton app routes through Homey.
 
@@ -72,8 +72,8 @@ Day-to-day: Tap any release button when you need the SofaBaton app; Homey resume
 
 KNOWN LIMITATIONS
 
-- X2 only — X1 and X1S are not supported
-- Single hub — only one X2 per Homey device is supported
+- X1S unverified — the X1S shares the X2 protocol and should work, but is untested; the original X1 is not supported
+- Single hub — only one hub per Homey device is supported
 - Activity triggers require MQTT — the X2 hub only broadcasts activity state over MQTT; without a broker configured, the "activity changed" trigger will not fire
 - LAN access required — the Manage page is not reachable outside your local network (by design)
 - Unofficial protocol — the X2 local API is reverse-engineered; SofaBaton firmware updates may require app updates
