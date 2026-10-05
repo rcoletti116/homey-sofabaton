@@ -1952,14 +1952,14 @@ function hubDevDelete(ev,id,name){
 }
 
 // ── Token ─────────────────────────────────────────────────────────
-function loadToken(){return localStorage.getItem('homey_token')||'';}
+function loadToken(){return sessionStorage.getItem('homey_token')||'';}
 function saveToken(){
   var tok=document.getElementById('token-inp').value;
-  localStorage.setItem('homey_token',tok);
+  sessionStorage.setItem('homey_token',tok);
   if(tok) fetch('/manage/save-token',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:tok})}).catch(function(){});
 }
 function applyServerToken(tok){
-  if(tok&&!loadToken()){localStorage.setItem('homey_token',tok);document.getElementById('token-inp').value=tok;loadHomeyDevices();}
+  if(tok&&!loadToken()){sessionStorage.setItem('homey_token',tok);document.getElementById('token-inp').value=tok;loadHomeyDevices();}
 }
 
 // ── Init ─────────────────────────────────────────────────────────────

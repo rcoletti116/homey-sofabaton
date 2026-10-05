@@ -11,34 +11,32 @@
 
 <button id="connect" class="homey-button-primary-full">Connect</button>
 
-<pre id="status" style="white-space:pre-wrap;"></pre>
+<p id="status" style="min-height:1.4em;"></p>
 
 <script>
 document.getElementById('connect').addEventListener('click', async () => {
   const status = document.getElementById('status');
   const ip = document.getElementById('ip').value.trim();
 
-  status.textContent =
-    'Starting connection test for ' + ip + '...';
+  if (!ip) {
+    status.textContent = 'Please enter an IP address.';
+    return;
+  }
+
+  status.textContent = 'Connecting…';
+  document.getElementById('connect').disabled = true;
 
   try {
     const result = await Homey.emit('validate_ip', { ip });
-
-    status.textContent =
-      'RESULT:\\n' +
-      JSON.stringify(result, null, 2);
-
     if (result === true) {
       await Homey.nextView();
+    } else {
+      status.textContent = 'Could not connect. Check the IP address and try again.';
+      document.getElementById('connect').disabled = false;
     }
   } catch (err) {
-    status.textContent =
-      'ERROR:\\n' +
-      'typeof=' + typeof err + '\\n' +
-      'constructor=' + (err && err.constructor ? err.constructor.name : 'none') + '\\n' +
-      'keys=' + (err ? Object.keys(err).join(',') : 'none') + '\\n' +
-      'message=' + (err && err.message ? err.message : 'none') + '\\n' +
-      'string=' + String(err);
+    status.textContent = (err && err.message) ? err.message : 'Connection failed. Check the IP address and try again.';
+    document.getElementById('connect').disabled = false;
   }
 });
 </script>
