@@ -1,7 +1,7 @@
 {
-  "id": "com.sofabaton.homey",
+  "id": "com.sofabaton.direct",
   "sdk": 3,
-  "version": "0.2.120",
+  "version": "0.2.121",
   "compatibility": ">=12.0.0",
   "name": {
     "en": "SofaBaton Direct"
@@ -29,6 +29,14 @@
   },
   "contributing": {
     "donate": {}
+  },
+  "contributors": {
+    "developers": [
+      {
+        "name": "m3tac0de",
+        "website": "https://github.com/m3tac0de/home-assistant-sofabaton-x1s"
+      }
+    ]
   },
   "bugs": {
     "url": "https://github.com/rcoletti116/homey-sofabaton/issues"
