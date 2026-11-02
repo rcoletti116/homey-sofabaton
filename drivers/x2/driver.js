@@ -248,7 +248,9 @@ module.exports = class SofaBatonDriver extends Homey.Driver {
     session.setHandler('validate_ip', async (data) => {
       ip = String(data.ip || '').trim();
       if (!/^\d{1,3}(\.\d{1,3}){3}$/.test(ip)) throw new Error('Enter a valid IPv4 address.');
-      if (ip.split('.').map(Number).some(p => p < 0 || p > 255)) throw new Error('Enter a valid IPv4 address.');
+      const octets = ip.split('.').map(Number);
+      if (octets.some(p => p < 0 || p > 255)) throw new Error('Enter a valid IPv4 address.');
+      if (octets[3] === 0 || octets[3] === 255) throw new Error('That looks like a network or broadcast address — enter the hub\'s specific IP (check your router\'s device list).');
 
       const { SofaBatonClient } = require('./device');
       const test = new SofaBatonClient(this.homey, ip);

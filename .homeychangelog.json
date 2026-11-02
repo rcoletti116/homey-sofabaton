@@ -50,6 +50,9 @@
   "0.2.127": {
     "en": "Fix WiFi device buttons not appearing in Flow; fix delete from Hub Device List not persisting; fix crash guards on all connection callbacks"
   },
+  "0.2.155": {
+    "en": "Reject broadcast/network addresses (.0 and .255) in hub IP field during pairing and in device settings — prevents the 'TCP callback timeout' error caused by entering 192.168.x.255 instead of the hub's real IP"
+  },
   "0.2.154": {
     "en": "Fix ECONNRESET crash: add request error handler so browser closing the Manage page mid-request no longer crashes the app; add permanent error handlers on the HTTP server and proxy UDP sockets"
   },

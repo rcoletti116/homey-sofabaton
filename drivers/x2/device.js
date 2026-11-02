@@ -3616,6 +3616,13 @@ class SofaBatonDevice extends Homey.Device {
 
   // Called by Homey when device settings are saved; reconnects only if network settings changed.
   async onSettings({ newSettings }) {
+    const newIp = String(newSettings.ip || '').trim();
+    if (newIp) {
+      if (!/^\d{1,3}(\.\d{1,3}){3}$/.test(newIp)) throw new Error('Enter a valid IPv4 address.');
+      const oct = newIp.split('.').map(Number);
+      if (oct.some(p => p < 0 || p > 255)) throw new Error('Enter a valid IPv4 address.');
+      if (oct[3] === 0 || oct[3] === 255) throw new Error('That looks like a network or broadcast address — enter the hub\'s specific IP.');
+    }
     const keys = ['ip', 'mqtt_host', 'mqtt_port', 'mqtt_username', 'mqtt_password'];
     const changed = keys.some(k => String(newSettings[k] ?? '') !== String(this.getSetting(k) ?? ''));
     if (!changed) return;
