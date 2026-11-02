@@ -1701,24 +1701,27 @@ function saveEditDevice(safeName,devName,existingCmds){
   var newCmds=[].map.call(rowsEl.querySelectorAll('input[type=text]'),function(i){return i.value.trim();}).filter(Boolean);
   if(!newCmds.length){statusEl.textContent='Enter at least one command name.';return;}
   saveBtn.disabled=true;
-  statusEl.textContent='Adding commands…';
+  saveBtn.textContent='Saving…';
+  statusEl.textContent='';
   fetch('/manage/wifi-device-add-cmds',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:devName,newCommands:newCmds})})
   .then(function(r){return r.json();})
   .then(function(r){
     if(r.ok){
+      saveBtn.textContent='✓ Saved!';
+      saveBtn.style.background='#2e7d32';
       statusEl.style.color='#2e7d32';
-      statusEl.textContent='✓ Added '+newCmds.length+' command'+(newCmds.length!==1?'s':'')+'!';
+      statusEl.textContent='Added '+newCmds.length+' command'+(newCmds.length!==1?'s'  :'')+'.';
       setTimeout(function(){closeEditDevice(safeName);loadData();},1500);
     } else {
       statusEl.style.color='#c62828';
       statusEl.textContent='✗ '+r.error;
-      saveBtn.disabled=false;
+      saveBtn.textContent='Save';saveBtn.style.background='';saveBtn.disabled=false;
     }
   })
   .catch(function(e){
     statusEl.style.color='#c62828';
     statusEl.textContent='✗ '+e.message;
-    saveBtn.disabled=false;
+    saveBtn.textContent='Save';saveBtn.style.background='';saveBtn.disabled=false;
   });
 }
 function addCmd(){
@@ -3474,13 +3477,18 @@ class SofaBatonDevice extends Homey.Device {
       { activity_name: name, activity_id: id, previous_activity_id: previous },
       { activity_id: id }
     ).catch(e => this.homey.error(`Activity trigger error: ${e.message}`));
-    // Fire the dedicated "stopped" trigger when the hub reports id=0 (no active activity).
-    if (id === 0 && previous != null && previous !== 0) {
-      const prevName = this.sofaBaton?.activities?.get(Number(previous))?.name || `Activity ${previous}`;
-      this._dlog(`ACTIVITY_STOPPED: previous="${prevName}" (id=${previous})`);
+    // Fire the dedicated "stopped" trigger when transitioning to a "no activity" state.
+    // The hub may report id=0, id=255, or another sentinel — treat any id that doesn't
+    // correspond to a known activity as "stopped" (guards against the previous being unknown too).
+    const prevNum = previous != null ? Number(previous) : null;
+    const newIsNoActivity = !this.sofaBaton?.activities?.has(id);
+    const prevWasActivity = prevNum != null && this.sofaBaton?.activities?.has(prevNum);
+    if (newIsNoActivity && prevWasActivity) {
+      const prevName = this.sofaBaton.activities.get(prevNum)?.name || `Activity ${prevNum}`;
+      this._dlog(`ACTIVITY_STOPPED: previous="${prevName}" (id=${prevNum}), stop sentinel=${id}`);
       this.activityStoppedTrigger.trigger(
         this,
-        { stopped_activity_name: prevName, stopped_activity_id: Number(previous) },
+        { stopped_activity_name: prevName, stopped_activity_id: prevNum },
       ).catch(e => this.homey.error(`Activity stopped trigger error: ${e.message}`));
     }
   }
